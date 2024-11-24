@@ -1,5 +1,5 @@
 {
-  "originHash" : "f856fad80922c0c65e372d31a0270307a54a9363d1dc490486c32f323ed6922b",
+  "originHash" : "e7298e09713dccccea2318dcef431e554028514de7b44f91c6092f9aeb61ffbe",
   "pins" : [
     {
       "identity" : "acarousel",
@@ -38,12 +38,12 @@
       }
     },
     {
-      "identity" : "swiftui-flow",
+      "identity" : "setting",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tevelee/SwiftUI-Flow.git",
+      "location" : "https://github.com/aheze/Setting",
       "state" : {
-        "revision" : "b528bd06ae70fbd2936d9561a456fb6ea65bc7ff",
-        "version" : "2.5.0"
+        "revision" : "f506b13b2024fc3e7585b6e4f8290f6f1525127c",
+        "version" : "1.0.1"
       }
     }
   ],

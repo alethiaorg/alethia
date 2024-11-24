@@ -8,8 +8,6 @@
 import SwiftUI
 import Kingfisher
 
-let PREFETCH_RANGE = 5
-
 struct ReaderRootView: View {
     @StateObject private var controller: ReaderControls
     
@@ -195,6 +193,7 @@ struct ReaderOverlay<Content: View>: View {
 
 struct ReaderContent: View {
     @EnvironmentObject var controller: ReaderControls
+    @AppStorage("prefetch") private(set) var PREFETCH_RANGE = 0
     
     @State private var contents = [String]()
     @State private var page = 0
@@ -322,6 +321,7 @@ struct ReaderContent: View {
                     .tag(contents.count + 1)
             }
         }
+        .environment(\.layoutDirection, controller.readerDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
         .onChange(of: page) { newPage, oldPage in

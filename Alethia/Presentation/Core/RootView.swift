@@ -22,12 +22,6 @@ struct RootView: View {
                     Text("Library")
                 }
             
-            Text("Search")
-                .tabItem {
-                    Image(systemName: "magnifyingglass")
-                    Text("Search")
-                }
-            
             SourceRootView()
                 .tabItem {
                     Image(systemName: "plus.square.dashed")
@@ -38,6 +32,12 @@ struct RootView: View {
                 .tabItem {
                     Image(systemName: "clock.fill")
                     Text("History")
+                }
+            
+            SettingsRootView()
+                .tabItem {
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
                 }
             
         }

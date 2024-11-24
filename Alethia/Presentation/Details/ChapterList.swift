@@ -24,6 +24,8 @@ private struct ScanlatorPriority: Identifiable {
 }
 
 struct ChapterList: View {
+    @AppStorage("haptics") private(set) var hapticsEnabled = false
+    
     let origins: [Origin]
     @State private var showManageSheet = false
     @State private var originPriorities: [OriginPriority] = []
@@ -84,6 +86,11 @@ struct ChapterList: View {
                         ChapterRow(chapter: chapter)
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        if hapticsEnabled {
+                            Haptics.impact()
+                        }
+                    })
                 }
             }
         }
@@ -143,6 +150,8 @@ struct ChapterList: View {
 }
 
 private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View {
+    @AppStorage("haptics") private(set) var hapticsEnabled = false
+    
     @Binding var isFilterActive: Bool
     @Binding var isSortDescending: Bool
     
@@ -219,6 +228,11 @@ private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View
                         .background(Color.gray.opacity(0.3))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
+                .simultaneousGesture(TapGesture().onEnded {
+                    if hapticsEnabled {
+                        Haptics.impact()
+                    }
+                })
             }
             .frame(height: 44)
         }

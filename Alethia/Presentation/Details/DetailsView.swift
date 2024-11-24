@@ -229,6 +229,7 @@ private struct HeaderView: View {
 }
 
 private struct ActionButtonsView: View {
+    @AppStorage("haptics") private(set) var hapticsEnabled = false
     @Environment(\.modelContext) private var modelContext
     @State private var updatingOrigin: Bool = false
     
@@ -247,6 +248,9 @@ private struct ActionButtonsView: View {
                 do {
                     manga.inLibrary.toggle()
                     try modelContext.save()
+                    if hapticsEnabled {
+                        Haptics.success()
+                    }
                 }
                 catch {
                     print("Could not save model context when toggling \(manga.title)")
@@ -313,6 +317,10 @@ private struct ActionButtonsView: View {
             
             manga.origins.append(contentsOf: mangaFromContext.origins)
             try modelContext.save()
+            
+            if hapticsEnabled {
+                Haptics.success()
+            }
         }
         catch {
             fatalError("Error adding new origin to manga: \(error)")
@@ -325,6 +333,8 @@ private struct ActionButtonsView: View {
 }
 
 private struct DescriptionView: View {
+    @AppStorage("haptics") private(set) var hapticsEnabled = false
+    
     let description: String
     @State private var isExpanded: Bool = false
     @State private var truncated: Bool = false
@@ -364,6 +374,9 @@ private struct DescriptionView: View {
                 .onTapGesture {
                     withAnimation {
                         isExpanded.toggle()
+                        if hapticsEnabled {
+                            Haptics.impact()
+                        }
                     }
                 }
             
@@ -373,6 +386,9 @@ private struct DescriptionView: View {
                     Button(action: {
                         withAnimation {
                             isExpanded.toggle()
+                            if hapticsEnabled {
+                                Haptics.impact()
+                            }
                         }
                     }) {
                         Text(Image(systemName: isExpanded ? "chevron.up" : "chevron.down"))
