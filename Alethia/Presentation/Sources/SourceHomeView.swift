@@ -10,6 +10,8 @@ import SwiftData
 import Kingfisher
 
 struct SourceHomeView: View {
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
+    @Namespace private var namespace
     @Environment(\.modelContext) private var modelContext
     let source: Source
     
@@ -24,16 +26,24 @@ struct SourceHomeView: View {
             VStack {
                 ForEach(source.routes, id: \.name) { route in
                     VStack(alignment: .leading) {
-                        NavigationLink {
-                            SourceGridView(source: source, route: route)
-                        } label: {
-                            HStack {
-                                Text(route.name)
-                                    .font(.title)
-                                Image(systemName: "arrow.right")
+                        NavigationButton(
+                            action: {
+                                if hapticsEnabled {
+                                    Haptics.impact()
+                                }
+                            },
+                            destination: {
+                                SourceGridView(source: source, route: route)
+                            },
+                            label: {
+                                HStack {
+                                    Text(route.name)
+                                        .font(.title)
+                                    Image(systemName: "arrow.right")
+                                }
+                                .foregroundStyle(.text)
                             }
-                        }
-                        .buttonStyle(.plain)
+                        )
                         
                         if let entries = items[route.path], itemsSet {
                             RowView(items: Array(entries.prefix(20)))
@@ -102,6 +112,7 @@ struct SourceHomeView: View {
                 ForEach(items, id: \.id) { item in
                     NavigationLink {
                         DetailView(entry: item)
+                            .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                     } label: {
                         VStack(alignment: .leading, spacing: 10) {
                             GeometryReader { geometry in
@@ -129,6 +140,7 @@ struct SourceHomeView: View {
                             
                             Spacer()
                         }
+                        .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
                         .overlay {
                             if libraryStatus[item.id] == true {
                                 ZStack(alignment: .topTrailing) {
@@ -145,6 +157,11 @@ struct SourceHomeView: View {
                     }
                     .padding(.horizontal, 4)
                     .frame(width: 150)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        if hapticsEnabled {
+                            Haptics.impact()
+                        }
+                    })
                 }
             }
         }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Setting
 
 struct SettingsRootView: View {
@@ -44,8 +45,8 @@ struct SettingsRootView: View {
                     }
                     .previewIcon("books.vertical.fill", color: .orange)
                     
-                    SettingPage(title: "Groups") {
-                        notImplemented
+                    SettingPage(title: "Collections") {
+                        collection
                     }
                     .previewIcon("rectangle.3.group.fill", color: .red)
                 }
@@ -86,10 +87,49 @@ struct SettingsRootView: View {
         SettingText(title: "Not Yet Implemented!")
     }
     
-    @AppStorage("haptics") private var haptics = true
+    @AppStorage("haptics") private var haptics = false
     @SettingBuilder var general: some Setting {
         SettingGroup(header: "Controls") {
             SettingToggle(title: "Allow Custom Haptic Feedback", isOn: $haptics)
+        }
+    }
+    
+    @Query private var collections: [Collection]
+    @SettingBuilder var collection: some Setting {
+        SettingGroup(header: "General") {
+            
+        }
+        
+        SettingGroup(header: "All Collections") {
+            SettingCustomView {
+                Section {
+                    ForEach(collections, id: \.id) { item in
+                        NavigationButton(
+                            action: {
+                                if haptics {
+                                    Haptics.impact()
+                                }
+                            },
+                            destination: {
+                                CollectionEditView(collection: item)
+                            },
+                            label: {
+                                HStack {
+                                    Text(item.name)
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(item.size) Total")
+                                    
+                                    Image(systemName: "chevron.right")
+                                }
+                                .padding()
+                                .foregroundStyle(.text)
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
     
@@ -164,6 +204,84 @@ struct SettingsRootView: View {
                 .padding(.horizontal, 15)
             }
         }
+    }
+}
+
+
+private struct CollectionEditView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var collection: Collection
+    @State private var showingDeleteAlert = false
+    @State private var newName: String = ""
+    
+    private var isDefaultCollection: Bool {
+        collection.name == "Default"
+    }
+    
+    var body: some View {
+        List {
+            Section {
+                if isDefaultCollection {
+                    Text(collection.name)
+                        .foregroundColor(.secondary)
+                } else {
+                    TextField("New Name", text: $newName)
+                        .accessibilityLabel("Edit collection name")
+                    
+                    Button("Save Changes") {
+                        saveChanges()
+                    }
+                    .disabled(newName.isEmpty || newName == collection.name)
+                    .accessibilityHint("Save the new collection name")
+                }
+            } header: {
+                Text(isDefaultCollection ? "Default Collection" : "Edit Name - \(collection.name)")
+            } footer: {
+                if isDefaultCollection {
+                    Text("The default collection cannot be edited or removed.")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+            
+            if !isDefaultCollection {
+                Section {
+                    Button("Delete Collection", role: .destructive) {
+                        showingDeleteAlert = true
+                    }
+                    .accessibilityHint("Delete this collection permanently")
+                } footer: {
+                    Text("Deleting this collection will remove it from all associated manga.")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+        }
+        .navigationTitle("Edit Collection")
+        .navigationBarTitleDisplayMode(.large)
+        .alert("Delete Collection", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteCollection()
+            }
+        } message: {
+            Text("Are you sure you want to delete this collection? All manga will lose a relationship to this collection. This action cannot be undone.")
+        }
+    }
+    
+    private func saveChanges() {
+        guard !isDefaultCollection else { return }
+        collection.name = newName
+        try? modelContext.save()
+        dismiss()
+    }
+    
+    private func deleteCollection() {
+        guard !isDefaultCollection else { return }
+        modelContext.delete(collection)
+        try? modelContext.save()
+        dismiss()
     }
 }
 

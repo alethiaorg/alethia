@@ -10,6 +10,7 @@
 		172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */ = {isa = PBXBuildFile; productRef = 172BFACC2CE9981D00FD4FF2 /* Reorderable */; };
 		178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */ = {isa = PBXBuildFile; productRef = 178032A12CF24E6400CA38A9 /* ACarousel */; };
 		17EB70712CF2E5F100A515AE /* Setting in Frameworks */ = {isa = PBXBuildFile; productRef = 17EB70702CF2E5F100A515AE /* Setting */; };
+		17EB707A2CF332AB00A515AE /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = 17EB70792CF332AB00A515AE /* Flow */; };
 		17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 17ED0A8F2CE616A50073C6C5 /* Kingfisher */; };
 		17ED0AA02CE628750073C6C5 /* ExyteGrid in Frameworks */ = {isa = PBXBuildFile; productRef = 17ED0A9F2CE628750073C6C5 /* ExyteGrid */; };
 /* End PBXBuildFile section */
@@ -46,6 +47,7 @@
 			files = (
 				172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */,
 				17ED0AA02CE628750073C6C5 /* ExyteGrid in Frameworks */,
+				17EB707A2CF332AB00A515AE /* Flow in Frameworks */,
 				17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */,
 				178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */,
 				17EB70712CF2E5F100A515AE /* Setting in Frameworks */,
@@ -96,6 +98,7 @@
 				172BFACC2CE9981D00FD4FF2 /* Reorderable */,
 				178032A12CF24E6400CA38A9 /* ACarousel */,
 				17EB70702CF2E5F100A515AE /* Setting */,
+				17EB70792CF332AB00A515AE /* Flow */,
 			);
 			productName = Alethia;
 			productReference = 17244DE32CE4581100ABFEA5 /* Alethia.app */;
@@ -131,6 +134,7 @@
 				172BFACB2CE9981D00FD4FF2 /* XCRemoteSwiftPackageReference "reorderable" */,
 				178032A02CF24E6400CA38A9 /* XCRemoteSwiftPackageReference "ACarousel" */,
 				17EB706F2CF2E5F100A515AE /* XCRemoteSwiftPackageReference "Setting" */,
+				17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 17244DE42CE4581100ABFEA5 /* Products */;
@@ -307,7 +311,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -345,7 +349,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -406,6 +410,14 @@
 				minimumVersion = 1.0.1;
 			};
 		};
+		17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tevelee/SwiftUI-Flow.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.0;
+			};
+		};
 		17ED0A8E2CE616A50073C6C5 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
@@ -439,6 +451,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 17EB706F2CF2E5F100A515AE /* XCRemoteSwiftPackageReference "Setting" */;
 			productName = Setting;
+		};
+		17EB70792CF332AB00A515AE /* Flow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;
+			productName = Flow;
 		};
 		17ED0A8F2CE616A50073C6C5 /* Kingfisher */ = {
 			isa = XCSwiftPackageProductDependency;

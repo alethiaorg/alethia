@@ -11,6 +11,7 @@ import Kingfisher
 import ACarousel
 
 struct HomeRootView: View {
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
     @Environment(\.modelContext) private var context
     
     @Query(updatedAtDescriptor) private var updated: [Origin]
@@ -46,23 +47,6 @@ struct HomeRootView: View {
             }
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        print("Notifications!")
-                    } label: {
-                        Image(systemName: "bell")
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        print("Settings tapped")
-                    }) {
-                        Image(systemName: "gearshape")
-                    }
-                }
-            }
             .onAppear {
                 loadPopular()
             }
@@ -128,7 +112,7 @@ private extension HomeRootView {
     @ViewBuilder
     private func RowView(items: [Manga]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack {
+            LazyHStack(spacing: 4) {
                 ForEach(Array(items).prefix(10), id: \.id) { item in
                     NavigationLink {
                         if let entry = try? item.toMangaEntry() {
@@ -148,8 +132,12 @@ private extension HomeRootView {
                                 .foregroundColor(.red)
                         }
                     }
-                    .padding(.horizontal, 4)
                     .frame(width: 150)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        if hapticsEnabled {
+                            Haptics.impact()
+                        }
+                    })
                 }
             }
         }
@@ -272,6 +260,7 @@ private struct CoverImage: View {
 }
 
 private struct MangaDetails: View {
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
     let item: Manga
     
     var body: some View {
@@ -290,23 +279,31 @@ private struct MangaDetails: View {
             Spacer()
             
             HStack(spacing: 8) {
-                NavigationLink {
-                    if let entry = try? item.toMangaEntry() {
-                        DetailView(entry: entry)
-                    } else {
-                        Text("Unable to load manga details")
+                NavigationButton(
+                    action: {
+                        if hapticsEnabled {
+                            Haptics.impact()
+                        }
+                    },
+                    destination: {
+                        if let entry = try? item.toMangaEntry() {
+                            DetailView(entry: entry)
+                        } else {
+                            Text("Unable to load manga details")
+                        }
+                    },
+                    label: {
+                        Text("View Details")
+                            .lineLimit(1)
+                            .padding(.vertical, 14)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Color.primary.opacity(0.85),
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
+                            .foregroundColor(.background)
                     }
-                } label: {
-                    Text("View Details")
-                        .lineLimit(1)
-                        .padding(.vertical, 14)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            Color.primary.opacity(0.85),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        )
-                        .foregroundColor(.background)
-                }
+                )
                 
                 Button {
                     print("Continue Reading \(item.title)!")

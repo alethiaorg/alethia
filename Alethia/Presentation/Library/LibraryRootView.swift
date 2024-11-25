@@ -12,9 +12,10 @@ import Kingfisher
 struct LibraryRootView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(descriptor) private var allManga: [Manga]
+    @Query private var collections: [Collection]
     
     @State private var searchText = ""
-    @State private var selectedTab: PublishStatus = .Ongoing
+    @State private var selectedCollection: Collection?
     
     private static var descriptor = FetchDescriptor<Manga>(
         predicate: #Predicate { $0.inLibrary }
@@ -24,28 +25,13 @@ struct LibraryRootView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 SearchBar(text: $searchText)
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 8)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
                 
-                TabSelector(selectedTab: $selectedTab)
+                CollectionSelector(collections: collections, selectedCollection: $selectedCollection)
                     .padding(.top, 8)
                 
-                TabView(selection: $selectedTab) {
-                    MangaListView(manga: filteredManga(for: .Ongoing))
-                        .tag(PublishStatus.Ongoing)
-                    
-                    MangaListView(manga: filteredManga(for: .Completed))
-                        .tag(PublishStatus.Completed)
-                    
-                    MangaListView(manga: filteredManga(for: .Hiatus))
-                        .tag(PublishStatus.Hiatus)
-                    
-                    MangaListView(manga: filteredManga(for: .Cancelled))
-                        .tag(PublishStatus.Cancelled)
-                    
-                    MangaListView(manga: filteredManga(for: .Unknown))
-                        .tag(PublishStatus.Unknown)
-                }
+                MangaListView(manga: filteredManga())
                 
                 Spacer()
             }
@@ -67,13 +53,17 @@ struct LibraryRootView: View {
                 }
             }
         }
+        .onAppear {
+            if selectedCollection == nil {
+                selectedCollection = collections.first { $0.name == "Default" }
+            }
+        }
     }
     
-    private func filteredManga(for status: PublishStatus) -> [Manga] {
+    private func filteredManga() -> [Manga] {
         allManga.filter { manga in
-            guard let firstOrigin = manga.origins.first else { return false }
-            return firstOrigin.publishStatus == status &&
-            (searchText.isEmpty || manga.title.localizedCaseInsensitiveContains(searchText))
+            let collectionMatch = selectedCollection == nil || manga.collections.contains(selectedCollection!)
+            return collectionMatch && (searchText.isEmpty || manga.title.localizedCaseInsensitiveContains(searchText))
         }
     }
 }
@@ -93,25 +83,27 @@ struct SearchBar: View {
     }
 }
 
-struct TabSelector: View {
-    @Binding var selectedTab: PublishStatus
-    let tabs = PublishStatus.allCases
+struct CollectionSelector: View {
+    let collections: [Collection]
+    @Binding var selectedCollection: Collection?
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 24) {
-                ForEach(tabs, id: \.id) { tab in
+                ForEach(collections) { collection in
                     VStack {
-                        Text(tab.rawValue.capitalized)
-                            .foregroundColor(selectedTab == tab ? .white : .gray)
-                        if selectedTab == tab {
+                        Text(collection.name)
+                            .foregroundColor(selectedCollection == collection ? .white : .gray)
+                        if selectedCollection == collection {
                             Rectangle()
                                 .frame(height: 2)
-                                .foregroundColor(tab.color)
+                                .foregroundColor(.blue)
                         }
                     }
                     .onTapGesture {
-                        selectedTab = tab
+                        withAnimation(.easeInOut){
+                            selectedCollection = collection
+                        }
                     }
                 }
             }
@@ -121,6 +113,7 @@ struct TabSelector: View {
 }
 
 struct MangaListView: View {
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
     @Namespace private var namespace
     let manga: [Manga]
     let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -135,7 +128,7 @@ struct MangaListView: View {
             }
         } else {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: 4) {
                     ForEach(manga) { item in
                         if let entry = try? item.toMangaEntry() {
                             NavigationLink {
@@ -145,6 +138,11 @@ struct MangaListView: View {
                                 MangaEntryView(item: entry)
                                     .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
                             }
+                            .simultaneousGesture(TapGesture().onEnded {
+                                if hapticsEnabled {
+                                    Haptics.impact()
+                                }
+                            })
                         } else {
                             Text("Unavailable to convert \(item.title) to entry.")
                                 .foregroundColor(.red)

@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import Kingfisher
+import Flow
 
 let BACKGROUND_GRADIENT_BREAKPOINT: CGFloat = 800
 
@@ -95,6 +96,10 @@ private struct ContentView: View {
                             Divider()
                             
                             SourcesView(origins: manga.origins, inLibrary: inLibrary)
+                            
+                            Divider()
+                            
+                            CollectionsView(manga: manga)
                             
                             Divider()
                             

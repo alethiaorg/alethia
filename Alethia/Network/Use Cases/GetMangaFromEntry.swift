@@ -26,6 +26,11 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
         throw NetworkError.invalidData
     }
     
+    let collectionDescriptor = FetchDescriptor<Collection>(predicate: #Predicate { $0.name == "Default" })
+    guard let defaultCollection = try context.fetch(collectionDescriptor).first else {
+        throw AppError.noDefaultCollection
+    }
+    
     let mangaDTO: MangaDTO = try await ns.request(url: url)
     
     let manga = Manga(
@@ -34,6 +39,8 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
         synopsis: mangaDTO.synopsis,
         tags: mangaDTO.tags
     )
+    
+    manga.collections.append(defaultCollection)
     
     mangaDTO.alternativeTitles.forEach {
         manga.alternativeTitles.append(AlternativeTitle(title: $0, manga: manga))

@@ -179,6 +179,7 @@ enum SchemaV2: VersionedSchema {
         
         var origins: [Origin] = [Origin]()
         var alternativeTitles = [AlternativeTitle]()
+        var collections: [Collection] = [Collection]()
         
         @Transient
         var firstOriginUpdatedAt: Date {
@@ -323,6 +324,24 @@ enum SchemaV2: VersionedSchema {
         init(name: String, path: String) {
             self.name = name
             self.path = path
+        }
+    }
+    
+    @Model
+    final class Collection {
+        #Unique<Collection>([\.name])
+        
+        var id = UUID()
+        @Attribute(.unique) var name: String
+        @Relationship(deleteRule: .nullify, inverse: \Manga.collections) var mangas: [Manga] = []
+        
+        init(name: String) {
+            self.name = name
+        }
+        
+        @Transient
+        var size: Int {
+            mangas.filter { $0.inLibrary }.count
         }
     }
 }

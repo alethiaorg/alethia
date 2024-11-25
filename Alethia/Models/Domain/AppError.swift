@@ -12,6 +12,7 @@ enum AppError: Error {
     case noSource(_ origin: Origin)
     case duplicateHost
     case chapterError
+    case noDefaultCollection
     
     var errorDescription: String? {
         switch self {
@@ -26,6 +27,9 @@ enum AppError: Error {
             
         case .chapterError:
             return "Chapter is missing relational properties origin, source or host."
+            
+        case .noDefaultCollection:
+            return "Default Collection was unable to be found."
         }
     }
 }

@@ -102,41 +102,52 @@ struct SourceRootView: View {
 }
 
 struct SourceRow: View {
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
+    
     @Binding var edit: Bool
     let source: Source
     var onPinToggle: () -> Void
     
     var body: some View {
-        NavigationLink(destination: SourceHomeView(source: source)) {
-            HStack {
-                KFImage(URL(fileURLWithPath: source.icon))
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 40, height: 40)
-                    .cornerRadius(4)
-                    .clipped()
-                    .padding(.trailing, 10)
-                
-                VStack(alignment: .leading) {
-                    Text(source.name)
-                        .font(.headline)
-                    Text(source.host?.name ?? "None")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+        NavigationButton(
+            action: {
+                if hapticsEnabled {
+                    Haptics.impact()
                 }
-                
-                Spacer()
-                
-                if edit {
-                    Button(action: onPinToggle) {
-                        Image(systemName: source.pinned ? "pin.fill" : "pin")
-                            .foregroundStyle(source.pinned ? .primary : .secondary)
+            },
+            destination: { SourceHomeView(source: source) },
+            label: {
+                HStack {
+                    KFImage(URL(fileURLWithPath: source.icon))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 40, height: 40)
+                        .cornerRadius(4)
+                        .clipped()
+                        .padding(.trailing, 10)
+                    
+                    VStack(alignment: .leading) {
+                        Text(source.name)
+                            .font(.headline)
+                        Text(source.host?.name ?? "None")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
                     }
-                    .buttonStyle(.plain)
-                    .transition(.opacity)
+                    
+                    Spacer()
+                    
+                    if edit {
+                        Button(action: onPinToggle) {
+                            Image(systemName: source.pinned ? "pin.fill" : "pin")
+                                .foregroundStyle(source.pinned ? .primary : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .transition(.opacity)
+                    }
                 }
+                .foregroundStyle(.text)
             }
-        }
+        )
     }
 }
 
