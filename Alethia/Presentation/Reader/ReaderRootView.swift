@@ -25,11 +25,7 @@ struct ReaderRootView: View {
 
 class ReaderControls: ObservableObject {
     let chapters: [Chapter]
-    @Published var currentIndex: Int {
-        didSet {
-            print("Current Index: \(currentIndex)")
-        }
-    }
+    @Published var currentIndex: Int
     @Published var readerDirection: ReaderDirection
     
     init(chapters: [Chapter], currentIndex: Int, initialDirection: ReaderDirection = .LTR) {
@@ -360,13 +356,14 @@ struct ReaderContent: View {
 }
 
 struct PreviousChapterView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var controller: ReaderControls
     
     var body: some View {
         VStack {
             Spacer()
             
-            Text("Currently: \(controller.currentChapter.toString())")
+            Text(controller.currentChapter.toString())
                 .font(.title)
                 .foregroundColor(.primary)
             
@@ -388,19 +385,25 @@ struct PreviousChapterView: View {
                     .foregroundColor(.secondary)
             }
             
+            Button("Exit") {
+                dismiss()
+            }
+            .font(.subheadline)
+            
             Spacer()
         }
     }
 }
 
 struct NextChapterView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var controller: ReaderControls
     
     var body: some View {
         VStack {
             Spacer()
             
-            Text("Currently: \(controller.currentChapter.toString())")
+            Text(controller.currentChapter.toString())
                 .font(.title)
                 .foregroundColor(.primary)
             
@@ -420,6 +423,10 @@ struct NextChapterView: View {
                 Text("There is no next chapter.")
                     .font(.headline)
                     .foregroundColor(.secondary)
+            }
+            
+            Button("Exit") {
+                dismiss()
             }
             
             Spacer()

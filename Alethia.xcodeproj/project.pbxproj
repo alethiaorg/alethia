@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */ = {isa = PBXBuildFile; productRef = 172BFACC2CE9981D00FD4FF2 /* Reorderable */; };
 		178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */ = {isa = PBXBuildFile; productRef = 178032A12CF24E6400CA38A9 /* ACarousel */; };
+		178EF3E72CF5463F00EC14FD /* ScrollViewLoader in Frameworks */ = {isa = PBXBuildFile; productRef = 178EF3E62CF5463F00EC14FD /* ScrollViewLoader */; };
 		17EB70712CF2E5F100A515AE /* Setting in Frameworks */ = {isa = PBXBuildFile; productRef = 17EB70702CF2E5F100A515AE /* Setting */; };
 		17EB707A2CF332AB00A515AE /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = 17EB70792CF332AB00A515AE /* Flow */; };
 		17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 17ED0A8F2CE616A50073C6C5 /* Kingfisher */; };
@@ -46,6 +47,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */,
+				178EF3E72CF5463F00EC14FD /* ScrollViewLoader in Frameworks */,
 				17ED0AA02CE628750073C6C5 /* ExyteGrid in Frameworks */,
 				17EB707A2CF332AB00A515AE /* Flow in Frameworks */,
 				17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */,
@@ -99,6 +101,7 @@
 				178032A12CF24E6400CA38A9 /* ACarousel */,
 				17EB70702CF2E5F100A515AE /* Setting */,
 				17EB70792CF332AB00A515AE /* Flow */,
+				178EF3E62CF5463F00EC14FD /* ScrollViewLoader */,
 			);
 			productName = Alethia;
 			productReference = 17244DE32CE4581100ABFEA5 /* Alethia.app */;
@@ -135,6 +138,7 @@
 				178032A02CF24E6400CA38A9 /* XCRemoteSwiftPackageReference "ACarousel" */,
 				17EB706F2CF2E5F100A515AE /* XCRemoteSwiftPackageReference "Setting" */,
 				17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
+				178EF3E52CF5463F00EC14FD /* XCRemoteSwiftPackageReference "ScrollViewLoader" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 17244DE42CE4581100ABFEA5 /* Products */;
@@ -402,6 +406,14 @@
 				minimumVersion = 0.2.0;
 			};
 		};
+		178EF3E52CF5463F00EC14FD /* XCRemoteSwiftPackageReference "ScrollViewLoader" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gh123man/ScrollViewLoader.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.2;
+			};
+		};
 		17EB706F2CF2E5F100A515AE /* XCRemoteSwiftPackageReference "Setting" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aheze/Setting";
@@ -446,6 +458,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 178032A02CF24E6400CA38A9 /* XCRemoteSwiftPackageReference "ACarousel" */;
 			productName = ACarousel;
+		};
+		178EF3E62CF5463F00EC14FD /* ScrollViewLoader */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 178EF3E52CF5463F00EC14FD /* XCRemoteSwiftPackageReference "ScrollViewLoader" */;
+			productName = ScrollViewLoader;
 		};
 		17EB70702CF2E5F100A515AE /* Setting */ = {
 			isa = XCSwiftPackageProductDependency;

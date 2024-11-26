@@ -62,7 +62,7 @@ struct ChapterList: View {
     var body: some View {
         NavigationStack {
             ChapterListHeader(
-                chapterCount: 24,
+                chapterCount: unifiedChapters.count,
                 isFilterActive: .constant(false),
                 isSortDescending: .constant(true),
                 settings: { ManageSettingsView(
@@ -453,14 +453,12 @@ private struct ManageSettingsView: View {
         for (index, _) in originPriorities.enumerated() {
             originPriorities[index].priority = index
         }
-        print("Updated origin priorities: \(originPriorities)")
     }
     
     private func updateScanlatorPriorities() {
         for (index, _) in scanlatorPriorities.enumerated() {
             scanlatorPriorities[index].priority = index
         }
-        print("Updated scanlator priorities: \(scanlatorPriorities)")
     }
 }
 

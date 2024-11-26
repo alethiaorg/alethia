@@ -63,7 +63,6 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
         origin.manga = manga
         
         for chapterDTO in originDTO.chapters {
-            print("Date for Chapter \(chapterDTO.number) - \(chapterDTO.date)")
             let chapter = Chapter(
                 title: chapterDTO.title,
                 slug: chapterDTO.chapterSlug,

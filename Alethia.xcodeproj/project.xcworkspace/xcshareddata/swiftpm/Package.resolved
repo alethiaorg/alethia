@@ -1,5 +1,5 @@
 {
-  "originHash" : "cf1780364a4b1604a68e1315e100c93d8c778b1c86f1ab15f417edae098560fc",
+  "originHash" : "9ba8078b5dd53a1ffd8e3128c51701a35fda4383f51077f6b504908e3fae3f09",
   "pins" : [
     {
       "identity" : "acarousel",
@@ -38,6 +38,15 @@
       }
     },
     {
+      "identity" : "scrollviewloader",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gh123man/ScrollViewLoader.git",
+      "state" : {
+        "revision" : "a8017b65df2f937a850eff79def12e23e961f115",
+        "version" : "1.1.2"
+      }
+    },
+    {
       "identity" : "setting",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/aheze/Setting",
@@ -53,6 +62,15 @@
       "state" : {
         "revision" : "b528bd06ae70fbd2936d9561a456fb6ea65bc7ff",
         "version" : "2.5.0"
+      }
+    },
+    {
+      "identity" : "swiftui-introspect",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/siteline/SwiftUI-Introspect.git",
+      "state" : {
+        "revision" : "807f73ce09a9b9723f12385e592b4e0aaebd3336",
+        "version" : "1.3.0"
       }
     }
   ],

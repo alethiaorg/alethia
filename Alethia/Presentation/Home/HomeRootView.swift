@@ -215,7 +215,7 @@ private struct CarouselItem: View {
                     MangaDetails(item: item)
                 }
                 .frame(maxHeight: 250)
-                .padding(16)
+                .padding(.horizontal, 16)
                 .padding(.bottom, 20)
             }
         }
@@ -296,26 +296,25 @@ private struct MangaDetails: View {
                         Text("View Details")
                             .lineLimit(1)
                             .padding(.vertical, 14)
+                            .frame(height: 44)
                             .frame(maxWidth: .infinity)
-                            .background(
-                                Color.primary.opacity(0.85),
-                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            )
+                            .background(Color.primary.opacity(0.85))
                             .foregroundColor(.background)
+                            .cornerRadius(12)
                     }
                 )
                 
                 Button {
-                    print("Continue Reading \(item.title)!")
                 } label: {
                     Image(systemName: "book")
-                        .accessibilityLabel("Continue Reading")
                 }
                 .padding(12)
+                .frame(height: 44)
                 .background(Color.primary.opacity(0.85))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .foregroundColor(.background)
+                .cornerRadius(12)
             }
+//            .frame(height: 44)
         }
     }
 }

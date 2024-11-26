@@ -7,13 +7,19 @@
 
 import Foundation
 
-func getSourceContent(source: Source, route: String) async throws -> [MangaEntry] {
+func getSourceContent(source: Source, route: String, page: Int = 0) async throws -> [MangaEntry] {
     guard let baseUrl = source.host?.baseUrl,
           let version = source.host?.version else {
         throw NetworkError.invalidData
     }
     
-    guard let url = URL.appendingPaths(baseUrl, "api", "v\(version)", source.path, route) else {
+    guard var urlComponents = URLComponents(string: URL.appendingPaths(baseUrl, "api", "v\(version)", source.path, route)?.absoluteString ?? "") else {
+        throw NetworkError.missingURL
+    }
+    
+    urlComponents.queryItems = [URLQueryItem(name: "page", value: String(page))]
+    
+    guard let url = urlComponents.url else {
         throw NetworkError.missingURL
     }
     
@@ -30,3 +36,4 @@ func getSourceContent(source: Source, route: String) async throws -> [MangaEntry
         )
     }
 }
+

@@ -169,7 +169,8 @@ struct SourceHomeView: View {
     
     private func getRootContent() async throws -> Void {
         for route in source.routes {
-            items[route.path] = try await getSourceContent(source: source, route: route.path)
+            let newContent = try await getSourceContent(source: source, route: route.path, page: 1)
+            items[route.path] = newContent
         }
     }
     

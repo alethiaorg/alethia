@@ -8,30 +8,35 @@
 import SwiftUI
 import SwiftData
 import Kingfisher
+import ScrollViewLoader
 
 struct SourceGridView: View {
     @Environment(\.modelContext) private var modelContext
     @Namespace var namespace
+    
     var source: Source
     var route: SourceRoute
     
+    @State private var page: Int = 0
     @State private var items = [MangaEntry]()
     @State private var libraryStatus: [UUID: Bool] = [:]
     @State private var firstLoad = true
     @State private var isLoading = false
     @State private var error: Error?
     
+    @State private var noMoreContent: Bool = false
+    
     let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
     
     var body: some View {
         ZStack {
-            if isLoading {
+            if isLoading && items.isEmpty {
                 ProgressView()
             } else if let error = error {
                 Text("Error: \(error.localizedDescription)")
             } else {
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 10) {
+                    LazyVGrid(columns: columns) {
                         ForEach(items, id: \.id) { item in
                             NavigationLink {
                                 DetailView(entry: item)
@@ -53,9 +58,31 @@ struct SourceGridView: View {
                                         }
                                     }
                             }
+                            .id(item.id)
                         }
                     }
                 }
+                .refreshable {
+                    page = 1
+                    await fetchContent(reset: true)
+                }
+                .shouldLoadMore(bottomDistance: .absolute(50), waitForHeightChange: .always) {
+                    guard !isLoading else { return }
+                    page += 1
+                    await fetchContent()
+                }
+                
+                if noMoreContent {
+                    Text("No More Content.")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                }
+                
+                if isLoading {
+                    ProgressView()
+                        .padding()
+                }
+                
             }
         }
         .onAppear {
@@ -73,12 +100,20 @@ struct SourceGridView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    private func fetchContent() async {
+    private func fetchContent(reset: Bool = false) async {
         isLoading = true
         error = nil
         do {
-            let newItems = try await getSourceContent(source: source, route: route.path)
-            items.append(contentsOf: newItems)
+            let newItems = try await getSourceContent(source: source, route: route.path, page: page)
+            if reset {
+                items = newItems
+            } else {
+                items.append(contentsOf: newItems)
+            }
+            
+            if newItems.isEmpty {
+                noMoreContent = true
+            }
         } catch {
             self.error = error
         }

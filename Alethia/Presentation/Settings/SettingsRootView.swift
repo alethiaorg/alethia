@@ -49,6 +49,11 @@ struct SettingsRootView: View {
                         collection
                     }
                     .previewIcon("rectangle.3.group.fill", color: .red)
+                    
+                    SettingPage(title: "Tags") {
+                        notImplemented
+                    }
+                    .previewIcon("tag.fill", color: .blue)
                 }
                 
                 SettingGroup {
