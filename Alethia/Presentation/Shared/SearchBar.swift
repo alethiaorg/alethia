@@ -33,7 +33,8 @@ struct SearchBar: View {
                 .animation(.easeInOut, value: searchText)
             }
         }
-        .padding(8)
+        .padding()
+        .frame(height: 44)
         .background(Color.tint)
         .cornerRadius(10)
     }

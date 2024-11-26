@@ -79,8 +79,7 @@ struct ManageCollectionsView: View {
         VStack(spacing: 15) {
             HStack(spacing: 8) {
                 SearchBar(searchText: $searchText)
-                    .frame(maxHeight: .infinity)
-                
+
                 Button {
                     showingAddSheet = true
                 } label: {

@@ -158,54 +158,15 @@ struct SearchRootView: View {
     @ViewBuilder
     private func RowView(items: [MangaEntry]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack {
+            LazyHStack(spacing: 4) {
                 ForEach(items, id: \.id) { item in
                     NavigationLink {
                         DetailView(entry: item)
                             .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                     } label: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            GeometryReader { geometry in
-                                let cellWidth = geometry.size.width
-                                let cellHeight = cellWidth * 16 / 11
-                                
-                                KFImage(URL(string: item.coverUrl))
-                                    .placeholder { Color.tint.shimmer() }
-                                    .resizable()
-                                    .fade(duration: 0.25)
-                                    .scaledToFill()
-                                    .frame(width: cellWidth, height: cellHeight)
-                                    .cornerRadius(6)
-                                    .clipped()
-                            }
-                            .aspectRatio(11/16, contentMode: .fit)
-                            
-                            Text(item.title)
-                                .font(.system(size: 14))
-                                .fontWeight(.medium)
-                                .lineLimit(1)
-                                .multilineTextAlignment(.leading)
-                                .truncationMode(.tail)
-                                .foregroundStyle(.text)
-                            
-                            Spacer()
-                        }
+                        MangaEntryView(item: item, inLibrary: libraryStatus[item.id])
                         .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
-                        .overlay {
-                            if libraryStatus[item.id] == true {
-                                ZStack(alignment: .topTrailing) {
-                                    Color.black.opacity(0.5)
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.green)
-                                        .padding(10)
-                                }
-                            }
-                        }
                     }
-                    .padding(.horizontal, 4)
                     .frame(width: 150)
                     .simultaneousGesture(TapGesture().onEnded {
                         if hapticsEnabled {

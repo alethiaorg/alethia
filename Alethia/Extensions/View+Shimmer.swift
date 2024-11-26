@@ -8,30 +8,27 @@
 import SwiftUI
 
 extension View {
+    @ViewBuilder
     func shimmer() -> some View {
-        self
-            .overlay(
-                ShimmerView()
-                    .mask(self)
-            )
+        self.modifier(Shimmer())
     }
 }
 
-private struct ShimmerView: View {
-    @State private var startPoint: UnitPoint = .leading
-    @State private var endPoint: UnitPoint = .trailing
-
-    var body: some View {
-        LinearGradient(gradient: Gradient(colors: [.clear, Color.background.opacity(0.6), .clear]),
-                       startPoint: startPoint, endPoint: endPoint)
+private struct Shimmer: ViewModifier {
+    @State private var isInitialState = true
+    
+    public func body(content: Content) -> some View {
+        content
+            .mask(
+                LinearGradient(
+                    gradient: .init(colors: [.black.opacity(0.4), .black, .black.opacity(0.4)]),
+                    startPoint: (isInitialState ? .init(x: -0.3, y: -0.3) : .init(x: 1, y: 1)),
+                    endPoint: (isInitialState ? .init(x: 0, y: 0) : .init(x: 1.3, y: 1.3))
+                )
+            )
+            .animation(.linear(duration: 1.5).delay(0.25).repeatForever(autoreverses: false), value: isInitialState)
             .onAppear {
-                withAnimation(
-                    Animation.linear(duration: 1.5)
-                        .repeatForever(autoreverses: false)
-                ) {
-                    startPoint = .trailing
-                    endPoint = .leading
-                }
+                isInitialState = false
             }
     }
 }

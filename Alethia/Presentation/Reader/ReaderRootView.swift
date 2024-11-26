@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 import Kingfisher
 
 struct ReaderRootView: View {
     @StateObject private var controller: ReaderControls
+    @Environment(\.modelContext) private var modelContext
     
     init(chapters: [Chapter], current: Int) {
         _controller = StateObject(wrappedValue: ReaderControls(chapters: chapters, currentIndex: current))
@@ -17,9 +19,12 @@ struct ReaderRootView: View {
     
     var body: some View {
         ReaderContent()
-        .environmentObject(controller)
-        .toolbar(.hidden, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
+            .environmentObject(controller)
+            .toolbar(.hidden, for: .tabBar)
+            .navigationBarBackButtonHidden(true)
+            .onDisappear {
+                controller.updateReadingHistory(modelContext: modelContext)
+            }
     }
 }
 
@@ -27,6 +32,8 @@ class ReaderControls: ObservableObject {
     let chapters: [Chapter]
     @Published var currentIndex: Int
     @Published var readerDirection: ReaderDirection
+    @Published var currentPage: Int = 0
+    @Published var currentReadingHistory: ReadingHistory?
     
     init(chapters: [Chapter], currentIndex: Int, initialDirection: ReaderDirection = .LTR) {
         self.chapters = chapters
@@ -61,15 +68,48 @@ class ReaderControls: ObservableObject {
     func toggleReaderDirection() {
         readerDirection = readerDirection.cycleReadingDirection()
     }
+    
+    func createReadingHistory(modelContext: ModelContext, startPage: Int) {
+        let newHistory = ReadingHistory(
+            startChapter: currentChapter,
+            startPage: startPage
+        )
+        
+        modelContext.insert(newHistory)
+        currentReadingHistory = newHistory
+    }
+    
+    func updateReadingHistory(modelContext: ModelContext) {
+        guard let history = currentReadingHistory else { return }
+        
+        history.finishSession(
+            endPage: currentPage,
+            dateEnded: Date()
+        )
+        
+        if currentChapter != history.startChapter {
+            history.endChapter = currentChapter
+        }
+        
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save reading history: \(error)")
+        }
+    }
 }
 
-struct ReaderOverlay<Content: View>: View {
+private struct ReaderOverlay<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var controller: ReaderControls
     @State var isOverlayVisible: Bool = true
     @Binding var currentPage: Int
     let totalPages: Int
     let content: Content
+    
+    private var inContentRange: Bool {
+        currentPage >= 0 && currentPage < totalPages
+    }
     
     init(currentPage: Binding<Int>, totalPages: Int, @ViewBuilder content: () -> Content) {
         self._currentPage = currentPage
@@ -86,7 +126,7 @@ struct ReaderOverlay<Content: View>: View {
                     }
                 }
             
-            if isOverlayVisible && (currentPage >= 0 && currentPage < totalPages) {
+            if isOverlayVisible && inContentRange {
                 VStack {
                     HStack {
                         VStack(alignment: .leading) {
@@ -187,16 +227,17 @@ struct ReaderOverlay<Content: View>: View {
     }
 }
 
-struct ReaderContent: View {
+private struct ReaderContent: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var controller: ReaderControls
     @AppStorage("prefetch") private(set) var PREFETCH_RANGE = 0
     
     @State private var contents = [String]()
-    @State private var page = 0
     @State private var isLoading = true
     @State private var error: Error?
     
     @State private var isGoingToPreviousChapter = false
+    @State private var isGoingToNextChapter = false
     
     @State private var prefetcher: ImagePrefetcher?
     
@@ -214,7 +255,7 @@ struct ReaderContent: View {
                     Text("Try Again?")
                 }
             } else {
-                ReaderOverlay(currentPage: $page, totalPages: contents.count) {
+                ReaderOverlay(currentPage: $controller.currentPage, totalPages: contents.count) {
                     if controller.readerDirection.isVertical {
                         VerticalReader()
                     }
@@ -227,13 +268,25 @@ struct ReaderContent: View {
         .onAppear {
             loadChapterContent()
         }
-        .onChange(of: page) { _, _ in
+        .onChange(of: controller.currentPage) {
+            guard !contents.isEmpty else { return }
+            
             prefetchImages()
+            
+            updateProgress()
         }
         .onChange(of: controller.currentIndex) { oldValue, newValue in
             isGoingToPreviousChapter = newValue > oldValue
+            isGoingToNextChapter = newValue < oldValue
             loadChapterContent()
         }
+    }
+    
+    private func updateProgress() {
+        let newProgress = max(0.0, min(Double(controller.currentPage) / Double(contents.count - 1), 1.0))
+        controller.currentChapter.progress = newProgress
+        
+        try? modelContext.save()
     }
     
     private func loadChapterContent() {
@@ -244,7 +297,32 @@ struct ReaderContent: View {
                 await MainActor.run {
                     contents = results
                     isLoading = false
-                    page = isGoingToPreviousChapter ? contents.count - 1 : 0
+                    
+                    // When chapter content gets initially loaded, jump to last page if going to previous chapter or load from the current chapter's progress
+                    if isGoingToPreviousChapter {
+                        controller.currentPage = contents.count - 1
+                    }
+                    else if isGoingToNextChapter {
+                        controller.currentPage = 0
+                    }
+                    else {
+                        let totalPages = contents.count
+                        let currentProgress = max(0.0, min(controller.currentChapter.progress, 1.0))
+                        let calculatedPage = Int(Double(totalPages - 1) * currentProgress)
+                        let clampedPage = max(0, min(calculatedPage, totalPages - 1))
+                        
+                        print("Total Pages: \(totalPages)")
+                        print("Current Progress: \(currentProgress)")
+                        
+                        // + 1 since its 0-based counting
+                        
+                        print("Calculated Page (before clamping): \(calculatedPage + 1)")
+                        print("Clamped Page: \(clampedPage + 1)")
+                        
+                        controller.currentPage = clampedPage
+                        controller.createReadingHistory(modelContext: modelContext, startPage: controller.currentPage)
+                    }
+                    
                     isGoingToPreviousChapter = false
                 }
             } catch {
@@ -263,8 +341,8 @@ struct ReaderContent: View {
         guard !contents.isEmpty else { return }
         
         // Calculate the range of indices to prefetch
-        let startIndex = max(0, page - PREFETCH_RANGE)
-        let endIndex = min(contents.count - 1, page + PREFETCH_RANGE)
+        let startIndex = max(0, controller.currentPage - PREFETCH_RANGE)
+        let endIndex = min(contents.count - 1, controller.currentPage + PREFETCH_RANGE)
         
         print("Prefetching Indexes \(startIndex) to \(endIndex)")
         
@@ -283,7 +361,7 @@ struct ReaderContent: View {
     
     @ViewBuilder
     private func HorizontalReader() -> some View {
-        TabView(selection: $page) {
+        TabView(selection: $controller.currentPage) {
             if controller.canGoBack {
                 Text("")
                     .tag(-2)
@@ -320,7 +398,7 @@ struct ReaderContent: View {
         .environment(\.layoutDirection, controller.readerDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-        .onChange(of: page) { newPage, oldPage in
+        .onChange(of: controller.currentPage) { newPage, oldPage in
             if oldPage == -2 {
                 controller.goToPreviousChapter()
             }
@@ -355,100 +433,175 @@ struct ReaderContent: View {
     }
 }
 
-struct PreviousChapterView: View {
+private struct PreviousChapterView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
     @EnvironmentObject var controller: ReaderControls
     
     var body: some View {
-        VStack {
+        VStack(spacing: 20) {
             Spacer()
             
-            Text(controller.currentChapter.toString())
-                .font(.title)
-                .foregroundColor(.primary)
+            VStack(spacing: 8) {
+                Text(controller.currentChapter.toString())
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                
+                Text("Currently Reading")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
             
             Spacer()
             
             if controller.canGoBack {
                 let prevChapter = controller.chapters[controller.currentIndex + 1]
-                Text("Previous: \(prevChapter.toString())")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
                 
-                Text("Published by: \(prevChapter.scanlator)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Previous Chapter")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(prevChapter.toString())
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("Published by: \(prevChapter.scanlator)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.secondary.opacity(0.1))
+                )
+                .padding(.horizontal)
             } else {
                 Text("There is no previous chapter.")
                     .font(.headline)
                     .foregroundColor(.secondary)
             }
             
-            Button("Exit") {
+            Button {
                 dismiss()
+            } label: {
+                Text("Exit")
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.blue.opacity(0.1))
+                    )
             }
-            .font(.subheadline)
+            .padding(.horizontal)
+            .highPriorityGesture(
+                TapGesture().onEnded {
+                    if hapticsEnabled {
+                        Haptics.impact()
+                    }
+                    dismiss()
+                }
+            )
             
             Spacer()
         }
+        .padding()
     }
 }
 
-struct NextChapterView: View {
+
+private struct NextChapterView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("haptics") private var hapticsEnabled: Bool = false
     @EnvironmentObject var controller: ReaderControls
     
     var body: some View {
-        VStack {
+        VStack(spacing: 20) {
             Spacer()
             
-            Text(controller.currentChapter.toString())
-                .font(.title)
-                .foregroundColor(.primary)
+            VStack(spacing: 8) {
+                Text(controller.currentChapter.toString())
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                
+                Text("Currently Reading")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
             
             Spacer()
             
             if controller.canGoForward {
                 let nextChapter = controller.chapters[controller.currentIndex - 1]
-                Text("Next: \(nextChapter.toString())")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
                 
-                Text("Published by: \(nextChapter.scanlator)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Next Chapter")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(nextChapter.toString())
+                            .font(.body)
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("Published by: \(nextChapter.scanlator)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.secondary.opacity(0.1))
+                )
+                .padding(.horizontal)
             } else {
                 Text("There is no next chapter.")
                     .font(.headline)
                     .foregroundColor(.secondary)
             }
             
-            Button("Exit") {
+            Button {
                 dismiss()
+            } label: {
+                Text("Exit")
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.blue.opacity(0.1))
+                    )
             }
+            .padding(.horizontal)
+            .highPriorityGesture(
+                TapGesture().onEnded {
+                    if hapticsEnabled {
+                        Haptics.impact()
+                    }
+                    dismiss()
+                }
+            )
             
             Spacer()
         }
+        .padding()
     }
-}
-
-#Preview("Reader Overlay") {
-    @Previewable @State var currentPage = 0
-    
-    @Previewable @StateObject var controller: ReaderControls = ReaderControls(
-        chapters: [Chapter(title: "Some", slug: "Thing", number: 1, scanlator: "IDK", date: Date())],
-        currentIndex: 0,
-        initialDirection: .LTR
-    )
-    
-    ZStack {
-        ReaderOverlay(currentPage: $currentPage, totalPages: 10) {
-            VStack {
-                Text("Hi")
-            }
-        }
-    }
-    .environmentObject(controller)
 }

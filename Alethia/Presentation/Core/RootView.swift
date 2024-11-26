@@ -28,7 +28,7 @@ struct RootView: View {
                     Text("Sources")
                 }
             
-            Text("History")
+            HistoryRootView()
                 .tabItem {
                     Image(systemName: "clock.fill")
                     Text("History")

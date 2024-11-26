@@ -35,6 +35,7 @@ struct SourceSearchView: View {
     var body: some View {
         VStack {
             SearchBar(searchText: $searchText)
+                .padding(.bottom, 20)
                 .onSubmit {
                     Task {
                         hasSearched = true
@@ -148,26 +149,12 @@ struct SourceSearchView: View {
                         DetailView(entry: item)
                             .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                     } label: {
-                        MangaEntryView(item: item)
+                        MangaEntryView(item: item, lineLimit: 2, inLibrary: libraryStatus[item.id])
                             .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
-                            .overlay {
-                                if libraryStatus[item.id] == true {
-                                    ZStack(alignment: .topTrailing) {
-                                        Color.black.opacity(0.5)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(.green)
-                                            .padding(10)
-                                    }
-                                }
-                            }
                     }
                     .id(item.id)
                 }
             }
-            
             if noMoreContent {
                 Text("No More Content.")
                     .font(.headline)

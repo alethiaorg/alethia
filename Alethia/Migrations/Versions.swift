@@ -273,6 +273,15 @@ enum SchemaV2: VersionedSchema {
         var scanlator: String
         var date: Date
         
+        // To calculate page number to start from progress -> totalPages * progress
+        // progress from 0...1
+        var progress: Double = 0.0
+        
+        @Transient
+        var read: Bool {
+            progress == 1.0
+        }
+        
         init(title: String?, slug: String, number: Double, scanlator: String, date: Date) {
             self.title = title
             self.slug = slug
@@ -342,6 +351,35 @@ enum SchemaV2: VersionedSchema {
         @Transient
         var size: Int {
             mangas.filter { $0.inLibrary }.count
+        }
+    }
+    
+    @Model
+    final class ReadingHistory {
+        
+        // SwiftData allows for unidirectional relationships so no need to set inverse properties on a chapter
+        
+        @Relationship(deleteRule: .cascade) var startChapter: Chapter
+        var startPage: Int
+        
+        @Relationship(deleteRule: .cascade) var endChapter: Chapter?
+        var endPage: Int?
+        var dateStarted: Date
+        var dateEnded: Date?
+
+        init(
+            startChapter: Chapter,
+            startPage: Int,
+            dateStarted: Date = Date()
+        ) {
+            self.startChapter = startChapter
+            self.startPage = startPage
+            self.dateStarted = dateStarted
+        }
+        
+        func finishSession(endPage: Int, dateEnded: Date) {
+            self.endPage = endPage
+            self.dateEnded = dateEnded
         }
     }
 }

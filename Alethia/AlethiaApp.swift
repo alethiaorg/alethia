@@ -22,7 +22,7 @@ struct AlethiaApp: App {
         do {
             let schema = Schema([Host.self, Source.self, SourceRoute.self,
                                  Manga.self, Origin.self, Chapter.self, AlternativeTitle.self,
-                                 Collection.self])
+                                 Collection.self, ReadingHistory.self])
             
             let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             container = try ModelContainer(for: schema, configurations: [config])

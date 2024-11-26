@@ -24,6 +24,7 @@ private struct ScanlatorPriority: Identifiable {
 }
 
 struct ChapterList: View {
+    @Environment(\.modelContext) private var modelContext
     @AppStorage("haptics") private(set) var hapticsEnabled = false
     
     let origins: [Origin]
@@ -59,10 +60,16 @@ struct ChapterList: View {
         return chapterMap.values.sorted { $0.number > $1.number }
     }
     
+    // Chapters go from LATEST -> OLDEST order by default
+    private var continueChapterIndex: Int? {
+        unifiedChapters.lastIndex { $0.progress != 1 }
+    }
+    
     var body: some View {
         NavigationStack {
             ChapterListHeader(
-                chapterCount: unifiedChapters.count,
+                unifiedChapters: unifiedChapters,
+                continueIndex: continueChapterIndex,
                 isFilterActive: .constant(false),
                 isSortDescending: .constant(true),
                 settings: { ManageSettingsView(
@@ -83,7 +90,16 @@ struct ChapterList: View {
                     NavigationLink {
                         ReaderRootView(chapters: unifiedChapters, current: index)
                     } label: {
-                        ChapterRow(chapter: chapter)
+                        ChapterRow(
+                            modelContext: modelContext,
+                            chapter: chapter,
+                            markAllPrevious: { chapter, isRead in
+                                markAll(unifiedChapters, startingFrom: chapter, isRead: isRead, direction: .previous)
+                            },
+                            markAllNext: { chapter, isRead in
+                                markAll(unifiedChapters, startingFrom: chapter, isRead: isRead, direction: .next)
+                            }
+                        )
                     }
                     .buttonStyle(.plain)
                     .simultaneousGesture(TapGesture().onEnded {
@@ -147,6 +163,29 @@ struct ChapterList: View {
         
         return newPriority < existingPriority ? new : existing
     }
+    
+    private func markAll(_ chapters: [Chapter], startingFrom chapter: Chapter, isRead: Bool, direction: Direction) {
+        guard let index = chapters.firstIndex(where: { $0.id == chapter.id }) else { return }
+        
+        let range: Range<Int>
+        switch direction {
+        case .previous:
+            range = 0..<index + 1
+        case .next:
+            range = index..<chapters.count
+        }
+        
+        for i in range {
+            chapters[i].progress = isRead ? 1.0 : 0.0
+        }
+        
+        try? modelContext.save()
+    }
+    
+    private enum Direction {
+        case previous
+        case next
+    }
 }
 
 private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View {
@@ -158,17 +197,20 @@ private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View
     let settingsView: Settings
     let filterView: Filter
     let sortView: Sort
-    let chapterCount: Int
+    let continueIndex: Int?
+    let unifiedChapters: [Chapter]
     
     init(
-        chapterCount: Int,
+        unifiedChapters: [Chapter],
+        continueIndex: Int?,
         isFilterActive: Binding<Bool>,
         isSortDescending: Binding<Bool>,
         @ViewBuilder settings: () -> Settings,
         @ViewBuilder filter: () -> Filter,
         @ViewBuilder sort: () -> Sort
     ) {
-        self.chapterCount = chapterCount
+        self.continueIndex = continueIndex
+        self.unifiedChapters = unifiedChapters
         self._isFilterActive = isFilterActive
         self._isSortDescending = isSortDescending
         self.settingsView = settings()
@@ -184,7 +226,7 @@ private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View
                         .font(.headline)
                         .fontWeight(.semibold)
                     
-                    Text("\(chapterCount) chapters")
+                    Text("\(unifiedChapters.count) chapters")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -209,13 +251,18 @@ private struct ChapterListHeader<Settings: View, Filter: View, Sort: View>: View
             }
             
             HStack {
-                Button {
-                    // TODO: Continue Reading
+                NavigationLink {
+                    if let continueIndex = continueIndex {
+                        ReaderRootView(chapters: unifiedChapters, current: continueIndex)
+                    } else {
+                        EmptyView()
+                    }
                 } label: {
                     Text("Continue Reading")
                         .font(.headline)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .disabled(continueIndex == nil)
                 .buttonStyle(.borderedProminent)
                 
                 NavigationLink {
@@ -268,7 +315,11 @@ private struct CircleButton: View {
 }
 
 private struct ChapterRow: View {
+    let modelContext: ModelContext
     let chapter: Chapter
+    
+    let markAllPrevious: (Chapter, Bool) -> Void
+    let markAllNext: (Chapter, Bool) -> Void
     
     var body: some View {
         HStack {
@@ -281,9 +332,25 @@ private struct ChapterRow: View {
             
             VStack(alignment: .leading) {
                 Text(chapter.toString())
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
                 Text(chapter.scanlator)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                
+                if !chapter.read {
+                    ProgressView(value: chapter.progress)
+                        .tint(Color.accentColor)
+                        .frame(height: 3)
+                        .clipShape(Capsule())
+                        .opacity(chapter.progress > 0.0 ? 1.0 : 0.0)
+                }
+                else {
+                    Text("Read")
+                        .font(.caption)
+                        .foregroundStyle(.appOrange)
+                }
             }
             Spacer()
             Text(chapter.date.toRelativeString())
@@ -291,6 +358,57 @@ private struct ChapterRow: View {
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 10)
+        .overlay {
+            if chapter.read {
+                ZStack(alignment: .topTrailing) {
+                    Color.background.opacity(0.3)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .contextMenu {
+            Button(action: {
+                chapter.progress = 1
+                try? modelContext.save()
+            }) {
+                Label("Mark as Read", systemImage: "checkmark")
+            }
+            .disabled(chapter.read)
+            
+            Button(action: {
+                chapter.progress = 0
+                try? modelContext.save()
+            }) {
+                Label("Mark as Unread", systemImage: "arrow.uturn.backward")
+            }
+            .disabled(!chapter.read)
+            
+            Divider()
+            
+            Button(action: {
+                markAllPrevious(chapter, true)
+            }) {
+                Label("Mark All Above as Read", systemImage: "arrow.up.to.line.compact")
+            }
+            
+            Button(action: {
+                markAllPrevious(chapter, false)
+            }) {
+                Label("Mark All Above as Unread", systemImage: "chevron.up")
+            }
+            
+            Button(action: {
+                markAllNext(chapter, true)
+            }) {
+                Label("Mark All Below as Read", systemImage: "chevron.down")
+            }
+            
+            Button(action: {
+                markAllNext(chapter, false)
+            }) {
+                Label("Mark All Below as Unread", systemImage: "arrow.down.to.line.compact")
+            }
+        }
     }
 }
 
@@ -472,17 +590,4 @@ private struct ManageSettingsView: View {
     
     return ChapterList(origins: preview.manga.origins)
         .modelContainer(preview.container)
-}
-
-#Preview("ChapterList Header") {
-    NavigationStack {
-        ChapterListHeader(
-            chapterCount: 24,
-            isFilterActive: .constant(false),
-            isSortDescending: .constant(true),
-            settings: { Text("Hi") },
-            filter: { Text("Hi") },
-            sort: { Text("Hi") }
-        )
-    }
 }

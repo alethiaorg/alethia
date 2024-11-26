@@ -26,7 +26,7 @@ struct SourceGridView: View {
     
     @State private var noMoreContent: Bool = false
     
-    let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    let columns = [GridItem(.flexible(), spacing: 4), GridItem(.flexible(), spacing: 4), GridItem(.flexible(), spacing: 4)]
     
     var body: some View {
         ZStack {
@@ -46,26 +46,14 @@ struct SourceGridView: View {
                                 DetailView(entry: item)
                                     .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                             } label: {
-                                MangaEntryView(item: item)
+                                MangaEntryView(item: item, lineLimit: 2, inLibrary: libraryStatus[item.id])
                                     .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
-                                    .overlay {
-                                        if libraryStatus[item.id] == true {
-                                            ZStack(alignment: .topTrailing) {
-                                                Color.black.opacity(0.5)
-                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                                
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .font(.system(size: 18))
-                                                    .foregroundColor(.green)
-                                                    .padding(10)
-                                            }
-                                        }
-                                    }
                             }
                             .id(item.id)
                         }
                     }
                 }
+                .padding(.horizontal, 10)
                 .refreshable {
                     page = 1
                     await fetchContent(reset: true)

@@ -100,8 +100,10 @@ struct CollectionSelector: View {
 struct MangaListView: View {
     @AppStorage("haptics") private var hapticsEnabled: Bool = false
     @Namespace private var namespace
+    
     let manga: [Manga]
-    let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    
+    let columns = [GridItem(.flexible(), spacing: 4), GridItem(.flexible(), spacing: 4), GridItem(.flexible(), spacing: 4)]
     
     var body: some View {
         if manga.isEmpty {
@@ -113,14 +115,14 @@ struct MangaListView: View {
             }
         } else {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 4) {
+                LazyVGrid(columns: columns) {
                     ForEach(manga) { item in
                         if let entry = try? item.toMangaEntry() {
                             NavigationLink {
                                 DetailView(entry: entry)
                                     .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                             } label: {
-                                MangaEntryView(item: entry)
+                                MangaEntryView(item: entry, lineLimit: 2)
                                     .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
                             }
                             .simultaneousGesture(TapGesture().onEnded {
@@ -134,8 +136,8 @@ struct MangaListView: View {
                         }
                     }
                 }
-                .padding()
             }
+            .padding(.horizontal, 10)
         }
     }
 }
