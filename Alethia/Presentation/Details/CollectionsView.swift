@@ -78,30 +78,8 @@ struct ManageCollectionsView: View {
     var body: some View {
         VStack(spacing: 15) {
             HStack(spacing: 8) {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                        .accessibilityHidden(true)
-                    
-                    TextField("Search", text: $searchText)
-                        .accessibilityLabel("Search collections")
-                    
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 17))
-                        }
-                        .accessibilityLabel("Clear search")
-                        .animation(.easeInOut, value: searchText)
-                    }
-                }
-                .padding(8)
-                .frame(maxHeight: .infinity)
-                .background(Color.tint)
-                .cornerRadius(10)
+                SearchBar(searchText: $searchText)
+                    .frame(maxHeight: .infinity)
                 
                 Button {
                     showingAddSheet = true

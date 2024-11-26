@@ -24,7 +24,7 @@ struct LibraryRootView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                SearchBar(text: $searchText)
+                SearchBar(searchText: $searchText)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
                 
@@ -65,21 +65,6 @@ struct LibraryRootView: View {
             let collectionMatch = selectedCollection == nil || manga.collections.contains(selectedCollection!)
             return collectionMatch && (searchText.isEmpty || manga.title.localizedCaseInsensitiveContains(searchText))
         }
-    }
-}
-
-struct SearchBar: View {
-    @Binding var text: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            TextField("Search", text: $text)
-        }
-        .padding(8)
-        .background(Color(UIColor.systemGray6))
-        .cornerRadius(10)
     }
 }
 

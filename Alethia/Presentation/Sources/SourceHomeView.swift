@@ -66,16 +66,35 @@ struct SourceHomeView: View {
                 else {
                     try updateLibraryStatus()
                 }
-                
                 itemsSet = true
             }
         }
         .navigationTitle(source.name)
         .toolbar {
             ToolbarItem {
-                NavigationLink(destination: Text("Hi")) {
-                    Image(systemName: "gearshape.fill")
-                }
+                NavigationButton(
+                    action: {
+                        
+                    },
+                    destination: {
+                        SourceSearchView(source: source)
+                    },
+                    label: {
+                        Image(systemName: "magnifyingglass")
+                    }
+                )
+                
+                NavigationButton(
+                    action: {
+                        
+                    },
+                    destination: {
+                        Text("Hi")
+                    },
+                    label: {
+                        Image(systemName: "gearshape.fill")
+                    }
+                )
             }
         }
     }
@@ -169,7 +188,7 @@ struct SourceHomeView: View {
     
     private func getRootContent() async throws -> Void {
         for route in source.routes {
-            let newContent = try await getSourceContent(source: source, route: route.path, page: 1)
+            let newContent = try await getSourceContent(source: source, route: route.path, page: 0)
             items[route.path] = newContent
         }
     }

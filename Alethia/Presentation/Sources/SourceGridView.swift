@@ -32,9 +32,13 @@ struct SourceGridView: View {
         ZStack {
             if isLoading && items.isEmpty {
                 ProgressView()
-            } else if let error = error {
+            }
+            
+            else if let error = error {
                 Text("Error: \(error.localizedDescription)")
-            } else {
+            }
+            
+            else {
                 ScrollView {
                     LazyVGrid(columns: columns) {
                         ForEach(items, id: \.id) { item in

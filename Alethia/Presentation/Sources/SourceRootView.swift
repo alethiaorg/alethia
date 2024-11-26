@@ -10,7 +10,6 @@ import SwiftData
 import Kingfisher
 
 struct SourceRootView: View {
-    @State private var router = Router()
     @Query private var hosts: [Host]
     @Query private var sources: [Source]
     
@@ -28,7 +27,7 @@ struct SourceRootView: View {
     var body: some View {
         let noContent: Bool = hosts.isEmpty && sources.isEmpty
         
-        NavigationStack(path: $router.navigationPath) {
+        NavigationStack {
             VStack {
                 if (noContent) {
                     VStack(spacing: 20) {
@@ -73,28 +72,39 @@ struct SourceRootView: View {
             }
             .animation(.easeInOut, value: edit)
             .navigationTitle("Sources")
-            .navigationBarItems(
-                leading: noContent ? nil : Button {
-                    edit.toggle()
-                } label: {
-                    Text(edit ? "Done" : "Edit")
-                },
-                trailing: Button {
-                    router.navigateTo(route: .HostAddView)
-                } label: {
-                    Image(systemName: "plus")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(edit ? "Done" : "Edit") {
+                        edit.toggle()
+                    }
                 }
-            )
-            .navigationDestination(for: NavigationRoutes.self) { screen in
-                switch screen {
-                case .HostView(_):
-                    Text("Host View")
-                    
-                case .SourceHomeView(_):
-                    Text("Source View")
-                    
-                case .HostAddView:
-                    HostAddView()
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationButton(
+                        action: {
+                            
+                        },
+                        destination: {
+                            HostAddView()
+                        },
+                        label: {
+                            Image(systemName: "plus")
+                        }
+                    )
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationButton(
+                        action: {
+                            
+                        },
+                        destination: {
+                            SearchRootView()
+                        },
+                        label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                    )
                 }
             }
         }
@@ -109,45 +119,39 @@ struct SourceRow: View {
     var onPinToggle: () -> Void
     
     var body: some View {
-        NavigationButton(
-            action: {
-                if hapticsEnabled {
-                    Haptics.impact()
+        NavigationLink {
+            SourceHomeView(source: source)
+        } label: {
+            HStack {
+                KFImage(URL(fileURLWithPath: source.icon))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .cornerRadius(4)
+                    .clipped()
+                    .padding(.trailing, 10)
+                
+                VStack(alignment: .leading) {
+                    Text(source.name)
+                        .font(.headline)
+                    Text(source.host?.name ?? "None")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
                 }
-            },
-            destination: { SourceHomeView(source: source) },
-            label: {
-                HStack {
-                    KFImage(URL(fileURLWithPath: source.icon))
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 40, height: 40)
-                        .cornerRadius(4)
-                        .clipped()
-                        .padding(.trailing, 10)
-                    
-                    VStack(alignment: .leading) {
-                        Text(source.name)
-                            .font(.headline)
-                        Text(source.host?.name ?? "None")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                
+                Spacer()
+                
+                if edit {
+                    Button(action: onPinToggle) {
+                        Image(systemName: source.pinned ? "pin.fill" : "pin")
+                            .foregroundStyle(source.pinned ? .primary : .secondary)
                     }
-                    
-                    Spacer()
-                    
-                    if edit {
-                        Button(action: onPinToggle) {
-                            Image(systemName: source.pinned ? "pin.fill" : "pin")
-                                .foregroundStyle(source.pinned ? .primary : .secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .transition(.opacity)
-                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity)
                 }
-                .foregroundStyle(.text)
             }
-        )
+            .foregroundStyle(.text)
+        }
     }
 }
 
