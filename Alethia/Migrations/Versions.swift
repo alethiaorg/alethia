@@ -377,9 +377,10 @@ enum SchemaV2: VersionedSchema {
             self.dateStarted = dateStarted
         }
         
-        func finishSession(endPage: Int, dateEnded: Date) {
+        func finishSession(endPage: Int, dateEnded: Date, endChapter: Chapter?) {
             self.endPage = endPage
             self.dateEnded = dateEnded
+            self.endChapter = endChapter
         }
     }
 }

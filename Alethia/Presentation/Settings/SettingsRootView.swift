@@ -13,78 +13,97 @@ struct SettingsRootView: View {
     @State private var searchText = ""
     
     var body: some View {
-        SettingStack {
-            SettingPage(title: "Settings") {
-                SettingGroup {
-                    SettingPage(title: "General") {
-                        general
+        NavigationStack {
+            Button("Delete History") {
+                deleteAllReadingHistory()
+            }
+            
+            SettingStack {
+                SettingPage(title: "Settings") {
+                    SettingGroup {
+                        SettingPage(title: "General") {
+                            general
+                        }
+                        .previewIcon("gearshape.fill")
                     }
-                    .previewIcon("gearshape.fill")
-                }
-                
-                SettingGroup {
-                    SettingPage(title: "Privacy") {
-                        notImplemented
-                    }
-                    .previewIcon("hand.raised.fill", color: .green)
                     
-                    SettingPage(title: "Notifications") {
-                        notImplemented
+                    SettingGroup {
+                        SettingPage(title: "Privacy") {
+                            notImplemented
+                        }
+                        .previewIcon("hand.raised.fill", color: .green)
+                        
+                        SettingPage(title: "Notifications") {
+                            notImplemented
+                        }
+                        .previewIcon("bell.badge.fill", color: .red)
+                        
+                        SettingPage(title: "Tracking") {
+                            notImplemented
+                        }
+                        .previewIcon("clock.arrow.2.circlepath")
                     }
-                    .previewIcon("bell.badge.fill", color: .red)
                     
-                    SettingPage(title: "Tracking") {
-                        notImplemented
+                    SettingGroup {
+                        SettingPage(title: "Library") {
+                            notImplemented
+                        }
+                        .previewIcon("books.vertical.fill", color: .orange)
+                        
+                        SettingPage(title: "Collections") {
+                            collection
+                        }
+                        .previewIcon("rectangle.3.group.fill", color: .red)
+                        
+                        SettingPage(title: "Tags") {
+                            notImplemented
+                        }
+                        .previewIcon("tag.fill", color: .blue)
+                        
+                        SettingPage(title: "History") {
+                            history
+                        }
+                        .previewIcon("clock.fill", color: .green)
                     }
-                    .previewIcon("clock.arrow.2.circlepath")
-                }
-                
-                SettingGroup {
-                    SettingPage(title: "Library") {
-                        notImplemented
-                    }
-                    .previewIcon("books.vertical.fill", color: .orange)
                     
-                    SettingPage(title: "Collections") {
-                        collection
+                    SettingGroup {
+                        SettingPage(title: "Sources") {
+                            notImplemented
+                        }
+                        .previewIcon("cube.box.fill", color: .purple)
+                        
+                        SettingPage(title: "Reader") {
+                            reader
+                        }
+                        .previewIcon("book.fill", color: .orange)
+                        
+                        SettingPage(title: "Storage") {
+                            notImplemented
+                        }
+                        .previewIcon("externaldrive.fill", color: .teal)
                     }
-                    .previewIcon("rectangle.3.group.fill", color: .red)
                     
-                    SettingPage(title: "Tags") {
-                        notImplemented
+                    SettingGroup {
+                        SettingPage(title: "Backups") {
+                            notImplemented
+                        }
+                        .previewIcon("hand.raised.fill", color: .green)
+                        
+                        SettingPage(title: "About") {
+                            about
+                        }
+                        .previewIcon("hand.raised.fill", color: .appPurple)
                     }
-                    .previewIcon("tag.fill", color: .blue)
-                }
-                
-                SettingGroup {
-                    SettingPage(title: "Sources") {
-                        notImplemented
-                    }
-                    .previewIcon("cube.box.fill", color: .purple)
-                    
-                    SettingPage(title: "Reader") {
-                        reader
-                    }
-                    .previewIcon("book.fill", color: .orange)
-                    
-                    SettingPage(title: "Storage") {
-                        notImplemented
-                    }
-                    .previewIcon("externaldrive.fill", color: .teal)
-                }
-                
-                SettingGroup {
-                    SettingPage(title: "Backups") {
-                        notImplemented
-                    }
-                    .previewIcon("hand.raised.fill", color: .green)
-                    
-                    SettingPage(title: "About") {
-                        about
-                    }
-                    .previewIcon("hand.raised.fill", color: .appPurple)
                 }
             }
+        }
+        .alert("Delete All Reading History", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteAllReadingHistory()
+            }
+        } message: {
+            Text("This action cannot be undone. Are you sure you want to delete all reading history?")
         }
     }
     
@@ -210,6 +229,43 @@ struct SettingsRootView: View {
             }
         }
     }
+    
+    @Environment(\.modelContext) private var modelContext
+    @State private var showDeleteConfirmation = false
+    
+    @SettingBuilder
+    private var history: some Setting {
+        SettingGroup {
+            SettingPage(title: "Delete All History") {
+                SettingCustomView {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Text("Delete All Reading History")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func deleteAllReadingHistory() {
+            do {
+                // Fetch all reading histories first
+                let descriptor = FetchDescriptor<ReadingHistory>()
+                let histories = try modelContext.fetch(descriptor)
+                
+                // Delete each history individually to properly handle relationships
+                for history in histories {
+                    modelContext.delete(history)
+                }
+                
+                try modelContext.save()
+                print("Successfully deleted all reading history.")
+            } catch {
+                print("Failed to delete reading history: \(error)")
+            }
+        }
 }
 
 

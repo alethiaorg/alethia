@@ -84,12 +84,9 @@ class ReaderControls: ObservableObject {
         
         history.finishSession(
             endPage: currentPage,
-            dateEnded: Date()
+            dateEnded: Date(),
+            endChapter: currentChapter != history.startChapter ? currentChapter : nil
         )
-        
-        if currentChapter != history.startChapter {
-            history.endChapter = currentChapter
-        }
         
         do {
             try modelContext.save()
@@ -103,7 +100,11 @@ private struct ReaderOverlay<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var controller: ReaderControls
     @State var isOverlayVisible: Bool = true
-    @Binding var currentPage: Int
+    @Binding var currentPage: Int {
+        didSet {
+            print("Current Page: \(currentPage)")
+        }
+    }
     let totalPages: Int
     let content: Content
     
@@ -195,13 +196,19 @@ private struct ReaderOverlay<Content: View>: View {
                             .foregroundStyle(Color.white.opacity(controller.canGoBack ? 1 : 0.4))
                             .padding(.horizontal, 15)
                             
-                            let maxPage = max(0, totalPages - 1)
-                            Slider(value: Binding(
-                                get: { Double(min(currentPage, maxPage)) },
-                                set: { newValue in
-                                    currentPage = min(Int(newValue), maxPage)
-                                }
-                            ), in: 0...Double(maxPage), step: 1)
+                            if totalPages > 1 {
+                                Slider(
+                                    value: Binding<Double>(
+                                        get: { Double(currentPage) },
+                                        set: { currentPage = Int($0) }
+                                    ),
+                                    in: 0...Double(max(0, totalPages - 1)),
+                                    step: 1
+                                )
+                            }
+                            else {
+                                Spacer()
+                            }
                             
                             Button(action: controller.goToNextChapter) {
                                 Image(systemName: "chevron.right")

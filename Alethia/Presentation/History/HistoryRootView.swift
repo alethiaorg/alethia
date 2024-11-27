@@ -15,78 +15,81 @@ struct HistoryRootView: View {
     
     var body: some View {
         NavigationStack {
-            if readingHistories.isEmpty {
-                Spacer()
-                Text("No Available History.")
-                Text("(︶︹︺)")
-                Spacer()
-            }
-            else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(readingHistories) { history in
-                            Button {
+            Group {
+                if readingHistories.isEmpty {
+                    Spacer()
+                    Text("No Available History.")
+                    Text("(︶︹︺)")
+                    Spacer()
+                } else {
+                    List {
+                        ForEach(readingHistories, id: \.id) { history in
+                            Button(action: {
                                 selectedHistory = history
-                            } label: {
+                            }) {
                                 HistoryItemView(history: history)
-                                    .padding(.horizontal)
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(
+                                Group {
+                                    if let url = history.startChapter.origin?.cover {
+                                        KFImage(URL(string: url))
+                                            .resizable()
+                                            .scaledToFill()
+                                            .opacity(0.45)
+                                            .blur(radius: 8, opaque: true)
+                                            .clipped()
+                                    } else {
+                                        Color.tint
+                                    }
+                                }
+                            )
                         }
                     }
+                    .listRowSpacing(15)
                 }
-                .navigationTitle("Reading History")
-                .sheet(item: $selectedHistory) { history in
-                    HistoryDetailView(history: history)
-                }
+            }
+            .navigationTitle("Reading History")
+            .sheet(item: $selectedHistory) { history in
+                HistoryDetailView(history: history)
             }
         }
     }
 }
 
-private struct HistoryItemView: View {
+
+struct HistoryItemView: View {
     let history: ReadingHistory
+    @State private var isShowingDetail = false
     
     var body: some View {
-        ZStack(alignment: .leading) {
-            if let url = history.startChapter.origin?.cover {
-                KFImage(URL(string: url))
-                    .resizable()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .aspectRatio(contentMode: .fill)
-                    .clipped()
-                    .blur(radius: 8)
-                    .opacity(0.25)
-            }
+        HStack {
+            KFImage(URL(fileURLWithPath: history.startChapter.origin?.source?.icon ?? ""))
+                .placeholder { Color.gray }
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 50)
+                .cornerRadius(12)
             
-            HStack {
-                KFImage(URL(fileURLWithPath: history.startChapter.origin?.source?.icon ?? ""))
-                    .placeholder { Color.gray }
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .cornerRadius(8)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(history.startChapter.origin?.manga?.title ?? "Unknown Manga")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(history.startChapter.origin?.manga?.title ?? "Unknown Manga")
-                        .font(.headline)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
-                    
-                    Text("Chapter \(history.startChapter.number.toString())")
-                        .font(.subheadline)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                    
-                    Text(formatDate(history.dateStarted))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                Text(history.startChapter.toString())
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                Text(formatDate(history.dateStarted))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            .padding()
+            Spacer()
         }
-        .frame(height: 100)
-        .cornerRadius(10)
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -96,6 +99,7 @@ private struct HistoryItemView: View {
         return formatter.string(from: date)
     }
 }
+
 
 private struct HistoryDetailView: View {
     let history: ReadingHistory
@@ -222,8 +226,6 @@ private struct HistoryDetailView: View {
         return formatter.string(from: duration) ?? "Unknown"
     }
 }
-
-
 
 #Preview {
     HistoryRootView()
