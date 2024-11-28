@@ -15,52 +15,109 @@ let BACKGROUND_GRADIENT_BREAKPOINT: CGFloat = 800
 struct DetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var manga: Manga? = nil
+    @State private var error: Error? = nil
+    @State private var isLoading = false
     
     var entry: MangaEntry
     
-    /// TODO: Check for manga entry
-    /// 1. Check if any origin's slug is inside the manga entry's fetch URL
-    /// 2. Display accordingly
-    
     var body: some View {
-        ContentView(manga: manga, entry: entry)
-            .transition(.opacity)
-            .task {
-                await fetchManga()
+        Group {
+            if let error = error {
+                ErrorStateView(error: error) {
+                    // Instead of trying to modify the error parameter,
+                    // we modify the @State error property
+                    self.error = nil
+                    Task {
+                        await fetchManga()
+                    }
+                }
+            } else {
+                ContentView(manga: manga, entry: entry)
+                    .transition(.opacity)
             }
+        }
+        .task {
+            await fetchManga()
+        }
     }
     
     private func fetchManga() async {
-        Task {
-            do {
-                let entryId = entry.id
-                let sameIdDescriptor = FetchDescriptor<Manga>(
-                    predicate: #Predicate { $0.id == entryId }
-                )
-                
-                let entryTitle = entry.title
-                let sameTitleDescriptor = FetchDescriptor<Manga>(
-                    predicate: #Predicate { manga in
-                        manga.title.localizedStandardContains(entryTitle) ||
-                        manga.alternativeTitles.contains { $0.title.localizedStandardContains(entryTitle) }
-                    }
-                )
-                
-                if let result = try modelContext.fetch(sameIdDescriptor).first {
-                    print("Manga Fetched from Context")
-                    manga = result
+        isLoading = true
+        do {
+            let entryId = entry.id
+            let sameIdDescriptor = FetchDescriptor<Manga>(
+                predicate: #Predicate { $0.id == entryId }
+            )
+            
+            let entryTitle = entry.title
+            let sameTitleDescriptor = FetchDescriptor<Manga>(
+                predicate: #Predicate { manga in
+                    manga.title.localizedStandardContains(entryTitle) ||
+                    manga.alternativeTitles.contains { $0.title.localizedStandardContains(entryTitle) }
                 }
-                else if let result = try modelContext.fetch(sameTitleDescriptor).first {
-                    print("Similar Title Fetched from Context")
-                    manga = result
-                }
-                else {
-                    print("Manga Fetching from Remote Source")
-                    manga = try await getMangaFromEntry(entry: entry, context: modelContext)
-                }
-            } catch {
-                fatalError("Error fetching manga: \(error)")
+            )
+            
+            if let result = try modelContext.fetch(sameIdDescriptor).first {
+                print("Manga Fetched from Context")
+                manga = result
             }
+            else if let result = try modelContext.fetch(sameTitleDescriptor).first {
+                print("Similar Title Fetched from Context")
+                manga = result
+            }
+            else {
+                print("Manga Fetching from Remote Source")
+                manga = try await getMangaFromEntry(entry: entry, context: modelContext)
+            }
+            
+            withAnimation {
+                error = nil
+            }
+        } catch {
+            print("Error fetching manga: \(error)")
+            withAnimation {
+                self.error = error
+            }
+        }
+        withAnimation {
+            isLoading = false
+        }
+    }
+    
+    private struct ErrorStateView: View {
+        let error: Error
+        let retryAction: () -> Void
+        
+        var body: some View {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 50))
+                    .foregroundStyle(.red)
+                
+                Text("Failed to load manga")
+                    .font(.headline)
+                
+                Text(error.localizedDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                Button(action: retryAction) {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Retry")
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemBackground))
         }
     }
 }

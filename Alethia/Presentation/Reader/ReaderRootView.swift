@@ -236,6 +236,7 @@ private struct ReaderOverlay<Content: View>: View {
 
 private struct ReaderContent: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var controller: ReaderControls
     @AppStorage("prefetch") private(set) var PREFETCH_RANGE = 0
     
@@ -253,7 +254,13 @@ private struct ReaderContent: View {
             if isLoading {
                 ProgressView("Loading chapter content...")
             } else if let error = error {
+                Spacer()
+                Button("Back to Home") {
+                    dismiss()
+                }
+                Spacer()
                 Text("Error: \(error.localizedDescription)")
+                Spacer()
             } else if contents.isEmpty {
                 Text("No content available for this chapter.")
                 Button {
@@ -300,7 +307,16 @@ private struct ReaderContent: View {
         isLoading = true
         Task {
             do {
-                let results = try await getChapterContent(chapter: controller.currentChapter)
+                var results = [String]()
+                
+                if controller.currentChapter.isDownloaded {
+                    let ds = DownloadService(modelContext: modelContext)
+                    results = try await ds.getChapter(controller.currentChapter)
+                }
+                else {
+                    results = try await getChapterContent(chapter: controller.currentChapter)
+                }
+                
                 await MainActor.run {
                     contents = results
                     isLoading = false

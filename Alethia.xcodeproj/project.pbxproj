@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1713545D2CF813B00009DCA9 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 1713545C2CF813B00009DCA9 /* ZIPFoundation */; };
 		172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */ = {isa = PBXBuildFile; productRef = 172BFACC2CE9981D00FD4FF2 /* Reorderable */; };
 		178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */ = {isa = PBXBuildFile; productRef = 178032A12CF24E6400CA38A9 /* ACarousel */; };
 		178EF3E72CF5463F00EC14FD /* ScrollViewLoader in Frameworks */ = {isa = PBXBuildFile; productRef = 178EF3E62CF5463F00EC14FD /* ScrollViewLoader */; };
@@ -53,6 +54,7 @@
 				17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */,
 				178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */,
 				17EB70712CF2E5F100A515AE /* Setting in Frameworks */,
+				1713545D2CF813B00009DCA9 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,6 +104,7 @@
 				17EB70702CF2E5F100A515AE /* Setting */,
 				17EB70792CF332AB00A515AE /* Flow */,
 				178EF3E62CF5463F00EC14FD /* ScrollViewLoader */,
+				1713545C2CF813B00009DCA9 /* ZIPFoundation */,
 			);
 			productName = Alethia;
 			productReference = 17244DE32CE4581100ABFEA5 /* Alethia.app */;
@@ -139,6 +142,7 @@
 				17EB706F2CF2E5F100A515AE /* XCRemoteSwiftPackageReference "Setting" */,
 				17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
 				178EF3E52CF5463F00EC14FD /* XCRemoteSwiftPackageReference "ScrollViewLoader" */,
+				1713545B2CF813B00009DCA9 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 17244DE42CE4581100ABFEA5 /* Products */;
@@ -315,7 +319,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.2;
+				MARKETING_VERSION = 1.5.0;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -354,7 +358,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.2;
+				MARKETING_VERSION = 1.5.0;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -392,6 +396,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		1713545B2CF813B00009DCA9 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.19;
+			};
+		};
 		172BFACB2CE9981D00FD4FF2 /* XCRemoteSwiftPackageReference "reorderable" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/visfitness/reorderable";
@@ -451,6 +463,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1713545C2CF813B00009DCA9 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1713545B2CF813B00009DCA9 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
 		172BFACC2CE9981D00FD4FF2 /* Reorderable */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 172BFACB2CE9981D00FD4FF2 /* XCRemoteSwiftPackageReference "reorderable" */;

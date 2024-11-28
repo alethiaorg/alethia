@@ -320,12 +320,20 @@ enum SchemaV2: VersionedSchema {
     final class Chapter {
         #Index<Chapter>([\.number], [\.date], [\.scanlator])
         
+        var id = UUID()
+        
         @Relationship(inverse: \Origin.chapters) var origin: Origin?
         var title: String?
         var slug: String
         var number: Double
         var scanlator: String
         var date: Date
+        var localPath: String?
+        
+        @Transient
+        var isDownloaded: Bool {
+            localPath != nil
+        }
         
         // To calculate page number to start from progress -> totalPages * progress
         // progress from 0...1
