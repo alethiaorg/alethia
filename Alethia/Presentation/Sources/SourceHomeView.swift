@@ -83,6 +83,7 @@ struct SourceHomeView: View {
                     },
                     label: {
                         Image(systemName: "magnifyingglass")
+                            .foregroundStyle(Color.accentColor)
                     }
                 )
             }
@@ -97,6 +98,7 @@ struct SourceHomeView: View {
                     },
                     label: {
                         Image(systemName: "gearshape.fill")
+                            .foregroundStyle(Color.accentColor)
                     }
                 )
             }

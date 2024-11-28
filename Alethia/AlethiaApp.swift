@@ -11,10 +11,13 @@ import SwiftData
 @main
 struct AlethiaApp: App {
     
-    /// TODO: Smart Groups -
+    /// TODO: Feature (Smart Groups) -
     /// When toggling inLibrary, also append to a Collection if certain conditions hold true:-
     /// Matches tag names (AND | OR)
     ///
+    /// TODO: Bug -
+    /// When in viewing manga details from source tab, if priority was modified the cover image
+    /// will continue to be the one that was loaded from sources, even if the firstOrigin changes
     
     let container: ModelContainer
     

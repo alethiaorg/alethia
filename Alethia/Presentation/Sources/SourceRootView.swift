@@ -85,10 +85,11 @@ struct SourceRootView: View {
                             
                         },
                         destination: {
-                            HostAddView()
+                            SearchRootView()
                         },
                         label: {
-                            Image(systemName: "plus")
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(Color.accentColor)
                         }
                     )
                 }
@@ -99,10 +100,11 @@ struct SourceRootView: View {
                             
                         },
                         destination: {
-                            SearchRootView()
+                            HostAddView()
                         },
                         label: {
-                            Image(systemName: "magnifyingglass")
+                            Image(systemName: "plus")
+                                .foregroundStyle(Color.accentColor)
                         }
                     )
                 }

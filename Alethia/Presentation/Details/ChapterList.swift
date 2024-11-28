@@ -367,46 +367,68 @@ private struct ChapterRow: View {
             }
         }
         .contextMenu {
-            Button(action: {
-                chapter.progress = 1
-                try? modelContext.save()
-            }) {
-                Label("Mark as Read", systemImage: "checkmark")
-            }
-            .disabled(chapter.read)
-            
-            Button(action: {
-                chapter.progress = 0
-                try? modelContext.save()
-            }) {
-                Label("Mark as Unread", systemImage: "arrow.uturn.backward")
-            }
-            .disabled(!chapter.read)
-            
-            Divider()
-            
-            Button(action: {
-                markAllPrevious(chapter, true)
-            }) {
-                Label("Mark All Above as Read", systemImage: "arrow.up.to.line.compact")
-            }
-            
-            Button(action: {
-                markAllPrevious(chapter, false)
-            }) {
-                Label("Mark All Above as Unread", systemImage: "chevron.up")
+            ControlGroup {
+                Button {
+                    chapter.progress = 1
+                    try? modelContext.save()
+                } label: {
+                    HStack {
+                        Image(systemName: "book.closed.circle")
+                        Text("Mark as Read")
+                    }
+                }
+                .disabled(chapter.read)
+                
+                Button {
+                    chapter.progress = 0
+                    try? modelContext.save()
+                } label: {
+                    HStack {
+                        Image(systemName: "book.circle")
+                        Text("Mark as Unread")
+                    }
+                }
+                .disabled(!chapter.read)
             }
             
-            Button(action: {
-                markAllNext(chapter, true)
-            }) {
-                Label("Mark All Below as Read", systemImage: "chevron.down")
+            ControlGroup {
+                Button {
+                    markAllPrevious(chapter, true)
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.up.square.fill")
+                        Text("Mark All Above as Read")
+                    }
+                }
+                
+                Button {
+                    markAllPrevious(chapter, false)
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.up.square")
+                        Text("Mark All Above as Unread")
+                    }
+                }
             }
             
-            Button(action: {
-                markAllNext(chapter, false)
-            }) {
-                Label("Mark All Below as Unread", systemImage: "arrow.down.to.line.compact")
+            ControlGroup {
+                Button {
+                    markAllNext(chapter, true)
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.down.square.fill")
+                        Text("Mark All Below as Read")
+                    }
+                }
+                
+                Button {
+                    markAllNext(chapter, false)
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.down.square")
+                        Text("Mark All Below as Unread")
+                    }
+                }
             }
         }
     }

@@ -10,7 +10,7 @@ import SwiftData
 
 /// Save model to context when fetched so subsequent calls won't need refetch
 @MainActor
-func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = true) async throws -> Manga {
+func getMangaFromEntry(entry: MangaEntry, context: ModelContext, transient: Bool = false, insert: Bool = true) async throws -> Manga {
     let ns = NetworkService()
     
     guard let url = URL(string: entry.fetchUrl) else {
@@ -40,7 +40,10 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
         tags: mangaDTO.tags
     )
     
-    manga.collections.append(defaultCollection)
+    if !transient {
+        print("Setting manga default collection")
+        manga.collections.append(defaultCollection)
+    }
     
     mangaDTO.alternativeTitles.forEach {
         manga.alternativeTitles.append(AlternativeTitle(title: $0, manga: manga))
@@ -59,7 +62,11 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
             updatedAt: Date.parseChapterDate(originDTO.updatedAt)
         )
         
-        origin.source = source
+        if !transient {
+            print("Setting new origin source to \(source.name)")
+            origin.source = source
+        }
+        
         origin.manga = manga
         
         for chapterDTO in originDTO.chapters {
@@ -79,7 +86,12 @@ func getMangaFromEntry(entry: MangaEntry, context: ModelContext, insert: Bool = 
         manga.origins.append(origin)
     }
     
+    let defaultOrigin = manga.getFirstOrigin()
+    
+    manga.updateOriginOrder(newDefaultOrigin: defaultOrigin)
+    
     if insert {
+        print("In Get Manga From Entry: Insert is True! Inserting Manga to Context and Saving...")
         context.insert(manga)
         try context.save()
     }

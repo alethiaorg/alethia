@@ -204,13 +204,13 @@ private struct CarouselItem: View {
     
     var body: some View {
         ZStack {
-            BackgroundImage(url: item.origins.first?.cover ?? "")
+            BackgroundImage(url: item.getFirstOrigin().cover)
             
             VStack {
                 Spacer()
                 
                 HStack {
-                    CoverImage(url: item.origins.first?.cover ?? "")
+                    CoverImage(url: item.getFirstOrigin().cover)
                     
                     MangaDetails(item: item)
                 }

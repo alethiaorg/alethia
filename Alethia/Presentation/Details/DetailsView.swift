@@ -91,11 +91,16 @@ private struct ContentView: View {
                             
                             Divider()
                             
-                            TrackingView(title: manga.title, authors: manga.authors, chapterCount: manga.origins.first?.chapters.count ?? 0, inLibrary: inLibrary)
+                            TrackingView(
+                                title: manga.title,
+                                authors: manga.authors,
+                                chapterCount: manga.getFirstOrigin().chapters.count,
+                                inLibrary: inLibrary
+                            )
                             
                             Divider()
                             
-                            SourcesView(origins: manga.origins, inLibrary: inLibrary)
+                            SourcesView(manga: manga)
                             
                             Divider()
                             
@@ -103,7 +108,7 @@ private struct ContentView: View {
                             
                             Divider()
                             
-                            AdditionalView(origin: manga.origins.first!)
+                            AdditionalView(origin: manga.getFirstOrigin())
                             
                             Divider()
                             
@@ -137,14 +142,17 @@ private struct PlaceholderView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.3))
                     .frame(maxWidth: .infinity)
+                    .shimmer()
                 
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.3))
                     .frame(maxWidth: .infinity)
+                    .shimmer()
                 
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.gray.opacity(0.3))
                     .aspectRatio(1, contentMode: .fit)
+                    .shimmer()
             }
             .frame(height: 45)
             .shimmer()
@@ -156,12 +164,14 @@ private struct PlaceholderView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: geometry.size.height / 6)
                         .cornerRadius(4)
+                        .shimmer()
                     
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(height: 16)
                         .cornerRadius(4)
                         .opacity(0.6)
+                        .shimmer()
                 }
                 .redacted(reason: .placeholder)
                 
@@ -172,10 +182,12 @@ private struct PlaceholderView: View {
                             .fill(Color.gray.opacity(0.3))
                             .frame(width: 12, height: 12)
                             .cornerRadius(2)
+                            .shimmer()
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
                             .frame(width: 60, height: 12)
                             .cornerRadius(2)
+                            .shimmer()
                     }
                 }
                 .padding(.top, 8)
@@ -187,8 +199,6 @@ private struct PlaceholderView: View {
         }
     }
 }
-
-
 
 private struct BackdropView: View {
     let coverUrl: URL
@@ -229,6 +239,13 @@ private struct HeaderView: View {
             Text(authors.joined(separator: ", "))
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+        }
+        .contextMenu {
+            Button {
+                UIPasteboard.general.string = title
+            } label: {
+                Label("Copy Title", systemImage: "doc.on.doc.fill")
+            }
         }
     }
 }
@@ -315,12 +332,15 @@ private struct ActionButtonsView: View {
             // get fresh manga from context bassed on the mangaEntry
             let mangaFromContext: Manga = try await getMangaFromEntry(entry: entry, context: modelContext, insert: false)
             
-            // Need to update what origins point to
-            for origin in mangaFromContext.origins {
-                origin.manga = manga
-            }
+            // Add new origin's tags and alt titles
+            manga.updateTags(with: mangaFromContext.tags)
+            manga.updateAlternativeTitles(with: mangaFromContext.alternativeTitles)
             
+            // Update origin order
+            let defaultOrigin = manga.getFirstOrigin()
             manga.origins.append(contentsOf: mangaFromContext.origins)
+            manga.updateOriginOrder(newDefaultOrigin: defaultOrigin)
+            
             try modelContext.save()
             
             if hapticsEnabled {
@@ -471,49 +491,6 @@ private struct TrackingView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
-            }
-        }
-        .opacity(inLibrary ? 1 : 0.5)
-    }
-}
-
-private struct SourcesView: View {
-    let origins: [Origin]
-    let inLibrary: Bool
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Sources")
-                    .font(.headline)
-                
-                Image(systemName: "arrow.right")
-            }
-            
-            ForEach(origins, id: \.id) { origin in
-                HStack {
-                    KFImage(URL(fileURLWithPath: origin.source?.icon ?? ""))
-                        .placeholder { Color.gray }
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 40, height: 40)
-                        .cornerRadius(8)
-                    
-                    VStack(alignment: .leading) {
-                        Text(origin.source?.name ?? "Unknown Source")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                        Text(origin.source?.host?.name ?? "Unknown Host")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("\(origin.chapters.count) Chapters")
-                        .font(.caption)
-                }
-                .padding(.vertical, 4)
             }
         }
         .opacity(inLibrary ? 1 : 0.5)

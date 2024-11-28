@@ -183,7 +183,7 @@ enum SchemaV2: VersionedSchema {
         
         @Transient
         var firstOriginUpdatedAt: Date {
-            origins.first?.updatedAt ?? Date.distantPast
+            getFirstOrigin().updatedAt
         }
         
         init(title: String, authors: [String], synopsis: String, tags: [String]) {
@@ -194,9 +194,7 @@ enum SchemaV2: VersionedSchema {
         }
         
         func toMangaEntry() throws -> MangaEntry {
-            guard let origin = origins.first else {
-                throw AppError.noOrigin(self)
-            }
+            let origin = getFirstOrigin()
             
             guard let source = origin.source else {
                 throw AppError.noSource(origin)
@@ -214,6 +212,59 @@ enum SchemaV2: VersionedSchema {
                 title: self.title,
                 coverUrl: origin.cover
             )
+        }
+        
+        func getFirstOrigin() -> Origin {
+            guard let origin = self.origins.min(by: { $0.order < $1.order }) else {
+                fatalError("\(title) contains no origins.")
+            }
+            
+            return origin
+        }
+        
+        func updateOriginOrder(newDefaultOrigin: Origin) {
+            guard origins.contains(where: { $0.id == newDefaultOrigin.id }) else {
+                fatalError("The provided origin (\(newDefaultOrigin.slug)) is not part of the manga's origins.")
+            }
+            
+            newDefaultOrigin.order = 0
+            
+            var currentOrder = 1
+            for origin in origins where origin.id != newDefaultOrigin.id {
+                origin.order = currentOrder
+                currentOrder += 1
+            }
+        }
+
+        
+        func updateTags(with newTags: [String]) {
+            let lowercasedExistingTags = Set(self.tags.map { $0.lowercased() })
+            let uniqueNewTags = newTags.filter { !lowercasedExistingTags.contains($0.lowercased()) }
+            self.tags.append(contentsOf: uniqueNewTags)
+            self.tags.sort { $0.lowercased() < $1.lowercased() }
+        }
+        
+        func updateAlternativeTitles(with newTitles: [AlternativeTitle]) {
+            let lowercasedExistingTitles = Set(self.alternativeTitles.map { $0.title.lowercased() })
+            let uniqueNewTitles = newTitles.filter { !lowercasedExistingTitles.contains($0.title.lowercased()) }
+            
+            self.alternativeTitles.append(contentsOf: uniqueNewTitles)
+            self.alternativeTitles.sort { $0.title.lowercased() < $1.title.lowercased() }
+            
+            for title in self.alternativeTitles {
+                title.manga = self
+            }
+        }
+        
+        func updateMetadataFromTransient(_ manga: Manga) {
+            self.title = manga.title
+            self.authors = manga.authors
+            self.synopsis = manga.synopsis
+            
+            self.updateTags(with: manga.tags)
+            self.updateAlternativeTitles(with: manga.alternativeTitles)
+            
+            print("Origins remain unchanged. Count: \(self.origins.count)")
         }
     }
     
@@ -248,6 +299,9 @@ enum SchemaV2: VersionedSchema {
         var createdAt: Date
         var updatedAt: Date
         var chapters: [Chapter] = []
+        
+        // Based on order of display priority to manga (0 is highest)
+        var order: Int = 0
         
         init(slug: String, url: String, cover: String, rating: Double, referer: String, publishStatus: PublishStatus, contentRating: ContentRating, createdAt: Date, updatedAt: Date) {
             self.slug = slug
@@ -366,7 +420,7 @@ enum SchemaV2: VersionedSchema {
         var endPage: Int?
         var dateStarted: Date
         var dateEnded: Date?
-
+        
         init(
             startChapter: Chapter,
             startPage: Int,

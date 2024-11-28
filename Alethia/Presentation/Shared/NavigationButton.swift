@@ -22,6 +22,7 @@ struct NavigationButton<Destination: View, Label: View>: View {
         }) {
             self.label()
         }
+        .buttonStyle(.plain)
         .navigationDestination(isPresented: $isPresented) {
             LazyDestination(destination: destination)
         }
