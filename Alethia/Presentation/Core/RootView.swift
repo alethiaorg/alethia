@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
+    @Environment(\.modelContext) private var modelContext
+    
     var body: some View {
         TabView {
             HomeRootView()
@@ -39,10 +42,39 @@ struct RootView: View {
                     Image(systemName: "gearshape.fill")
                     Text("Settings")
                 }
-            
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave)) { notification in
+            if let userInfo = notification.userInfo {
+                let ds = DataService(modelContext: modelContext)
+                
+                let insertedIdentifiers = (userInfo["inserted"] as? [PersistentIdentifier]) ?? []
+                let deletedIdentifiers = (userInfo["deleted"] as? [PersistentIdentifier]) ?? []
+                let updatedIdentifiers = (userInfo["updated"] as? [PersistentIdentifier]) ?? []
+
+                let context = modelContext
+
+                let insertedObjects = insertedIdentifiers.compactMap { identifier in
+                    context.model(for: identifier)
+                }
+
+                let updatedObjects = updatedIdentifiers.compactMap { identifier in
+                    context.model(for: identifier)
+                }
+
+                let deletedObjects = deletedIdentifiers.map { identifier in
+                    identifier
+                }
+                
+                print("Inserted objects: \(insertedObjects)")
+                print("Updated objects: \(updatedObjects)")
+                print("Deleted identifiers: \(deletedObjects)")
+                
+                ds.updateMangaSettings(for: updatedObjects)
+            }
         }
     }
 }
+
 
 #Preview {
     RootView()

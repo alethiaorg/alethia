@@ -23,9 +23,19 @@ struct AlethiaApp: App {
     
     init() {
         do {
-            let schema = Schema([Host.self, Source.self, SourceRoute.self,
-                                 Manga.self, Origin.self, Chapter.self, AlternativeTitle.self,
-                                 Collection.self, ReadingHistory.self])
+            let schema = Schema([
+                // API Stuff
+                Host.self, Source.self, SourceRoute.self,
+                
+                // Main Stuff
+                Manga.self, Origin.self, Chapter.self, AlternativeTitle.self,
+                
+                // Collection/Tracking Stuff
+                Collection.self, ReadingHistory.self,
+                
+                // Chapter Setting Stuff
+                ChapterSettings.self, OriginPriority.self, ScanlatorPriority.self
+            ])
             
             let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             container = try ModelContainer(for: schema, configurations: [config])
@@ -39,9 +49,13 @@ struct AlethiaApp: App {
         WindowGroup {
             RootView()
         }
-        .modelContainer(container)
+        .modelContainer(container)        
     }
-    
+}
+
+// MARK: Database Seeding
+
+private extension AlethiaApp {
     private func createDefaultCollection() -> Void {
         let context = container.mainContext
         

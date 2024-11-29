@@ -59,6 +59,10 @@ struct DetailView: View {
             
             if let result = try modelContext.fetch(sameIdDescriptor).first {
                 print("Manga Fetched from Context")
+                
+                // First time fetched - Manually trigger setting fetch
+                result.originsDidChange()
+                
                 manga = result
             }
             else if let result = try modelContext.fetch(sameTitleDescriptor).first {
@@ -173,7 +177,7 @@ private struct ContentView: View {
                             
                             Divider()
                             
-                            ChapterList(origins: manga.origins)
+                            ChapterListView(manga: manga)
                         }
                         else {
                             PlaceholderView(geometry: geometry)
@@ -397,6 +401,8 @@ private struct ActionButtonsView: View {
             let defaultOrigin = manga.getFirstOrigin()
             manga.origins.append(contentsOf: mangaFromContext.origins)
             manga.updateOriginOrder(newDefaultOrigin: defaultOrigin)
+            
+            manga.needsSettingsUpdate = true
             
             try modelContext.save()
             

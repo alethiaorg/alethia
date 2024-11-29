@@ -26,7 +26,7 @@ struct SourcesView: View {
     let manga: Manga
     
     var body: some View {
-        let origins = manga.origins.sorted { $0.order < $1.order }
+        let origins = manga.origins.sorted { $0.priority < $1.priority }
         
         VStack(alignment: .leading, spacing: 16) {
             NavigationButton(
@@ -121,7 +121,7 @@ struct SourceDetailView: View {
     var filtered: [Origin] {
         manga.origins
             .filter { searchText.isEmpty || $0.source!.name.localizedStandardContains(searchText) }
-            .sorted { $0.order < $1.order }
+            .sorted { $0.priority < $1.priority }
     }
     
     var body: some View {
