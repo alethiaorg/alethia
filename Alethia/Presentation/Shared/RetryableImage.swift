@@ -8,13 +8,12 @@
 import Foundation
 import SwiftUI
 import Kingfisher
+import Zoomable
 
 struct RetryableImage: View {
     let url: URL
     let index: Int
     let referer: String
-    
-    let readerDirection: ReaderDirection
     
     @State private var loadingProgress: Double? = nil
     @State private var reloadID = UUID()
@@ -47,10 +46,15 @@ struct RetryableImage: View {
             
             // Take up entire width of screen
                 .resizable()
-                .aspectRatio(contentMode: readerDirection == .Webtoon ? .fill : .fit)
-                .frame(maxWidth: .infinity)
+                .aspectRatio(contentMode: .fit)
                 .tag(index)
                 .id(reloadID)
+            
+//                .zoomable(
+//                    minZoomScale: 1,
+//                    doubleTapZoomScale: 2,
+//                    outOfBoundsColor: Color.background
+//                )
             
             // NOTE: Can't apply .zoomable to this or else webtoon-view breaks!
             
@@ -72,7 +76,6 @@ struct RetryableImage: View {
             
             ProgressHandler()
         }
-        .frame(maxWidth: .infinity)
         .background(Color.background)
         .alert(isPresented: $showingAlert) {
             Alert(title: Text("Action Completed"), message: Text(alertMessage), dismissButton: .default(Text("OK")))

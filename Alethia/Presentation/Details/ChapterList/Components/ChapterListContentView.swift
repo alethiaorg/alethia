@@ -20,7 +20,7 @@ struct ChapterListContentView: View {
             LazyVStack {
                 ForEach(Array(vm.unified.enumerated()), id: \.element.id) { index, chapter in
                     NavigationLink {
-                        ReaderRootView(chapters: vm.unified, current: index)
+                        ReaderRootView(settings: vm.manga.chapterSettings, chapters: vm.unified, current: index)
                     } label: {
                         ChapterRow(
                             modelContext: modelContext,

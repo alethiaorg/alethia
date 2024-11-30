@@ -8,13 +8,18 @@
 import SwiftUI
 import SwiftData
 import Kingfisher
+import Zoomable
 
 struct ReaderRootView: View {
     @StateObject private var controller: ReaderControls
     @Environment(\.modelContext) private var modelContext
     
-    init(chapters: [Chapter], current: Int) {
-        _controller = StateObject(wrappedValue: ReaderControls(chapters: chapters, currentIndex: current))
+    init(settings: ChapterSettings, chapters: [Chapter], current: Int) {
+        _controller = StateObject(wrappedValue: ReaderControls(
+            settings: settings,
+            chapters: chapters,
+            currentIndex: current
+        ))
     }
     
     var body: some View {
@@ -29,16 +34,20 @@ struct ReaderRootView: View {
 }
 
 class ReaderControls: ObservableObject {
+    let settings: ChapterSettings
     let chapters: [Chapter]
     @Published var currentIndex: Int
-    @Published var readerDirection: ReaderDirection
     @Published var currentPage: Int = 0
     @Published var currentReadingHistory: ReadingHistory?
     
-    init(chapters: [Chapter], currentIndex: Int, initialDirection: ReaderDirection = .LTR) {
+    init(
+        settings: ChapterSettings,
+        chapters: [Chapter],
+        currentIndex: Int
+    ) {
+        self.settings = settings
         self.chapters = chapters
         self.currentIndex = currentIndex
-        self.readerDirection = initialDirection
     }
     
     var currentChapter: Chapter {
@@ -65,8 +74,14 @@ class ReaderControls: ObservableObject {
         }
     }
     
-    func toggleReaderDirection() {
-        readerDirection = readerDirection.cycleReadingDirection()
+    func toggleReaderDirection(context: ModelContext) {
+        settings.cycleReaderDirection()
+        do {
+            try context.save()
+        }
+        catch {
+            print("Error Saving Chapter Setting Read Direction")
+        }
     }
     
     func createReadingHistory(modelContext: ModelContext, startPage: Int) {
@@ -98,6 +113,7 @@ class ReaderControls: ObservableObject {
 
 private struct ReaderOverlay<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var controller: ReaderControls
     @State var isOverlayVisible: Bool = true
     @Binding var currentPage: Int {
@@ -121,6 +137,11 @@ private struct ReaderOverlay<Content: View>: View {
     var body: some View {
         ZStack {
             content
+                .zoomable(
+                    minZoomScale: 1.1,
+                    doubleTapZoomScale: 2.0,
+                    outOfBoundsColor: Color.background
+                )
                 .onTapGesture {
                     withAnimation(.easeInOut) {
                         isOverlayVisible.toggle()
@@ -160,9 +181,9 @@ private struct ReaderOverlay<Content: View>: View {
                     
                     HStack {
                         Button {
-                            controller.toggleReaderDirection()
+                            controller.toggleReaderDirection(context: modelContext)
                         } label: {
-                            Image(systemName: controller.readerDirection.systemImageName)
+                            Image(systemName: controller.settings.readDirection.systemImageName)
                                 .foregroundColor(.white)
                                 .font(.system(size: 24))
                                 .frame(width: 50, height: 50)
@@ -173,7 +194,7 @@ private struct ReaderOverlay<Content: View>: View {
                         Spacer()
                         
                         Button {
-                            controller.toggleReaderDirection()
+                            controller.toggleReaderDirection(context: modelContext)
                         } label: {
                             Image(systemName: "gearshape.fill")
                                 .foregroundColor(.white)
@@ -249,33 +270,55 @@ private struct ReaderContent: View {
     
     @State private var prefetcher: ImagePrefetcher?
     
+    @ViewBuilder
+    private func LoadingView() -> some View {
+        ProgressView("Loading Chapter Content..")
+    }
+    
+    @ViewBuilder
+    private func ErrorView(error: Error) -> some View {
+        Spacer()
+        Button("Back to Home") { dismiss() }
+        Spacer()
+        Text("Error: \(error.localizedDescription)")
+        Spacer()
+        Button("Try Again?") { loadChapterContent() }
+        Spacer()
+    }
+    
+    @ViewBuilder
+    private func EmptyContentView() -> some View {
+        Spacer()
+        Button("Back to Home") { dismiss() }
+        Spacer()
+        Text("No Chapter Content for this Chapter.")
+        Spacer()
+        Button("Try Again?") { loadChapterContent() }
+        Spacer()
+    }
+    
+    @ViewBuilder private func Reader() -> some View {
+        if controller.settings.readDirection.isVertical {
+            VerticalReader(contents: contents)
+        } else {
+            HorizontalReader(contents: contents)
+        }
+    }
+    
     var body: some View {
         Group {
             if isLoading {
-                ProgressView("Loading chapter content...")
+                LoadingView()
             } else if let error = error {
-                Spacer()
-                Button("Back to Home") {
-                    dismiss()
-                }
-                Spacer()
-                Text("Error: \(error.localizedDescription)")
-                Spacer()
+                ErrorView(error: error)
             } else if contents.isEmpty {
-                Text("No content available for this chapter.")
-                Button {
-                    loadChapterContent()
-                } label: {
-                    Text("Try Again?")
-                }
+                EmptyContentView()
             } else {
-                ReaderOverlay(currentPage: $controller.currentPage, totalPages: contents.count) {
-                    if controller.readerDirection.isVertical {
-                        VerticalReader()
-                    }
-                    else {
-                        HorizontalReader()
-                    }
+                ReaderOverlay(
+                    currentPage: $controller.currentPage,
+                    totalPages: contents.count
+                ) {
+                    Reader()
                 }
             }
         }
@@ -286,7 +329,6 @@ private struct ReaderContent: View {
             guard !contents.isEmpty else { return }
             
             prefetchImages()
-            
             updateProgress()
         }
         .onChange(of: controller.currentIndex) { oldValue, newValue in
@@ -380,251 +422,5 @@ private struct ReaderContent: View {
         )
         
         prefetcher?.start()
-    }
-    
-    @ViewBuilder
-    private func HorizontalReader() -> some View {
-        TabView(selection: $controller.currentPage) {
-            if controller.canGoBack {
-                Text("")
-                    .tag(-2)
-            }
-            
-            PreviousChapterView()
-                .tag(-1)
-            
-            ForEach(Array(contents.enumerated()), id: \.element) { index, imageUrlString in
-                Group {
-                    if let url = URL(string: imageUrlString) {
-                        RetryableImage(
-                            url: url,
-                            index: index,
-                            referer: controller.currentChapter.origin?.referer ?? "",
-                            readerDirection: controller.readerDirection
-                        )
-                        .tag(index)
-                    } else {
-                        Text("Invalid image URL")
-                            .tag(index)
-                    }
-                }
-            }
-            
-            NextChapterView()
-                .tag(contents.count)
-            
-            if controller.canGoForward {
-                Text("")
-                    .tag(contents.count + 1)
-            }
-        }
-        .environment(\.layoutDirection, controller.readerDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-        .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-        .onChange(of: controller.currentPage) { newPage, oldPage in
-            if oldPage == -2 {
-                controller.goToPreviousChapter()
-            }
-            else if oldPage == contents.count + 1 {
-                controller.goToNextChapter()
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func VerticalReader() -> some View {
-        ScrollView {
-            LazyVStack {
-                ForEach(Array(contents.enumerated()), id: \.element) { index, imageUrlString in
-                    Group {
-                        if let url = URL(string: imageUrlString) {
-                            RetryableImage(
-                                url: url,
-                                index: index,
-                                referer: controller.currentChapter.origin?.referer ?? "",
-                                readerDirection: controller.readerDirection
-                            )
-                            .tag(index)
-                        } else {
-                            Text("Invalid image URL")
-                                .tag(index)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct PreviousChapterView: View {
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("haptics") private var hapticsEnabled: Bool = false
-    @EnvironmentObject var controller: ReaderControls
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            VStack(spacing: 8) {
-                Text(controller.currentChapter.toString())
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-                
-                Text("Currently Reading")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            if controller.canGoBack {
-                let prevChapter = controller.chapters[controller.currentIndex + 1]
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Previous Chapter")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(prevChapter.toString())
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                        
-                        Text("Published by: \(prevChapter.scanlator)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.secondary.opacity(0.1))
-                )
-                .padding(.horizontal)
-            } else {
-                Text("There is no previous chapter.")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Button {
-                dismiss()
-            } label: {
-                Text("Exit")
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.blue.opacity(0.1))
-                    )
-            }
-            .padding(.horizontal)
-            .highPriorityGesture(
-                TapGesture().onEnded {
-                    if hapticsEnabled {
-                        Haptics.impact()
-                    }
-                    dismiss()
-                }
-            )
-            
-            Spacer()
-        }
-        .padding()
-    }
-}
-
-
-private struct NextChapterView: View {
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("haptics") private var hapticsEnabled: Bool = false
-    @EnvironmentObject var controller: ReaderControls
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            VStack(spacing: 8) {
-                Text(controller.currentChapter.toString())
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.center)
-                
-                Text("Currently Reading")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            if controller.canGoForward {
-                let nextChapter = controller.chapters[controller.currentIndex - 1]
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Next Chapter")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(nextChapter.toString())
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                        
-                        Text("Published by: \(nextChapter.scanlator)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.secondary.opacity(0.1))
-                )
-                .padding(.horizontal)
-            } else {
-                Text("There is no next chapter.")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Button {
-                dismiss()
-            } label: {
-                Text("Exit")
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.blue.opacity(0.1))
-                    )
-            }
-            .padding(.horizontal)
-            .highPriorityGesture(
-                TapGesture().onEnded {
-                    if hapticsEnabled {
-                        Haptics.impact()
-                    }
-                    dismiss()
-                }
-            )
-            
-            Spacer()
-        }
-        .padding()
     }
 }

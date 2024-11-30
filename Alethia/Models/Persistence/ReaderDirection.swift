@@ -7,20 +7,23 @@
 
 import Foundation
 
-enum ReaderDirection: CaseIterable {
-    case RTL
-    case LTR
-    case Vertical
-    case Webtoon
+enum ReaderDirection: String, CaseIterable, Codable {
+    case RTL = "RightToLeft"
+    case LTR = "LeftToRight"
+    case Vertical = "Vertical"
+    case Webtoon = "Webtoon"
     
-    func cycleReadingDirection() -> ReaderDirection {
-        let allCases = ReaderDirection.allCases
-        guard let currentIndex = allCases.firstIndex(of: self) else {
-            return self
+    mutating func cycleReadingDirection() {
+        switch self {
+        case .LTR:
+            self = .RTL
+        case .RTL:
+            self = .Vertical
+        case .Vertical:
+            self = .Webtoon
+        case .Webtoon:
+            self = .LTR
         }
-        
-        let nextIndex = (currentIndex + 1) % allCases.count
-        return allCases[nextIndex]
     }
     
     var isVertical: Bool {
@@ -45,3 +48,4 @@ enum ReaderDirection: CaseIterable {
         }
     }
 }
+

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1713545D2CF813B00009DCA9 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 1713545C2CF813B00009DCA9 /* ZIPFoundation */; };
+		171356552CFA4E310009DCA9 /* Zoomable in Frameworks */ = {isa = PBXBuildFile; productRef = 171356542CFA4E310009DCA9 /* Zoomable */; };
 		172BFACD2CE9981D00FD4FF2 /* Reorderable in Frameworks */ = {isa = PBXBuildFile; productRef = 172BFACC2CE9981D00FD4FF2 /* Reorderable */; };
 		178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */ = {isa = PBXBuildFile; productRef = 178032A12CF24E6400CA38A9 /* ACarousel */; };
 		178EF3E72CF5463F00EC14FD /* ScrollViewLoader in Frameworks */ = {isa = PBXBuildFile; productRef = 178EF3E62CF5463F00EC14FD /* ScrollViewLoader */; };
@@ -52,6 +53,7 @@
 				17ED0AA02CE628750073C6C5 /* ExyteGrid in Frameworks */,
 				17EB707A2CF332AB00A515AE /* Flow in Frameworks */,
 				17ED0A902CE616A50073C6C5 /* Kingfisher in Frameworks */,
+				171356552CFA4E310009DCA9 /* Zoomable in Frameworks */,
 				178032A22CF24E6400CA38A9 /* ACarousel in Frameworks */,
 				17EB70712CF2E5F100A515AE /* Setting in Frameworks */,
 				1713545D2CF813B00009DCA9 /* ZIPFoundation in Frameworks */,
@@ -105,6 +107,7 @@
 				17EB70792CF332AB00A515AE /* Flow */,
 				178EF3E62CF5463F00EC14FD /* ScrollViewLoader */,
 				1713545C2CF813B00009DCA9 /* ZIPFoundation */,
+				171356542CFA4E310009DCA9 /* Zoomable */,
 			);
 			productName = Alethia;
 			productReference = 17244DE32CE4581100ABFEA5 /* Alethia.app */;
@@ -143,6 +146,7 @@
 				17EB70782CF332AB00A515AE /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
 				178EF3E52CF5463F00EC14FD /* XCRemoteSwiftPackageReference "ScrollViewLoader" */,
 				1713545B2CF813B00009DCA9 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				171356532CFA4E310009DCA9 /* XCRemoteSwiftPackageReference "Zoomable" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 17244DE42CE4581100ABFEA5 /* Products */;
@@ -319,7 +323,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -358,7 +362,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.1;
+				MARKETING_VERSION = 1.5.2;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alethia;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -402,6 +406,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.9.19;
+			};
+		};
+		171356532CFA4E310009DCA9 /* XCRemoteSwiftPackageReference "Zoomable" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ryohey/Zoomable.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 		172BFACB2CE9981D00FD4FF2 /* XCRemoteSwiftPackageReference "reorderable" */ = {
@@ -467,6 +479,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1713545B2CF813B00009DCA9 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		171356542CFA4E310009DCA9 /* Zoomable */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 171356532CFA4E310009DCA9 /* XCRemoteSwiftPackageReference "Zoomable" */;
+			productName = Zoomable;
 		};
 		172BFACC2CE9981D00FD4FF2 /* Reorderable */ = {
 			isa = XCSwiftPackageProductDependency;

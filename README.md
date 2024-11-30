@@ -27,6 +27,7 @@ Alethia is a cutting-edge Manga Reader built with SwiftUI, leveraging the power 
 - 📚 **Collection-based grouping** for efficient library management
 - 🧠 **Smart chapter sorting** with special chapter handling across different sources
 - ⌛ **Historical tracking** with details down to the second on all reading sessions
+- 💾 **Downloads** Fast and in .CBZ format for support with other cbz-based readers
 
 ## 🚀 Getting Started
 

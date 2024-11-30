@@ -148,6 +148,7 @@ private struct MangaListView: View {
                             } label: {
                                 MangaEntryView(item: entry, lineLimit: 2)
                                     .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
+                                    .scrollTargetLayout()
                             }
                             .simultaneousGesture(TapGesture().onEnded {
                                 if hapticsEnabled {
@@ -163,6 +164,7 @@ private struct MangaListView: View {
             }
             .padding(.horizontal, 10)
             .transition(.opacity)
+            .scrollTargetBehavior(.viewAligned)
         }
 }
 

@@ -30,6 +30,7 @@ enum ChapterSortDirection: String, CaseIterable, Codable {
 final class ChapterSettings {
     // MARK: Properties
     
+    var readDirection: ReaderDirection = ReaderDirection.LTR
     var sortOption: ChapterSortOption
     var sortDirection: ChapterSortDirection
     var showAll: Bool = false
@@ -53,6 +54,10 @@ final class ChapterSettings {
 }
 
 extension ChapterSettings {
+    func cycleReaderDirection() {
+        readDirection.cycleReadingDirection()
+    }
+    
     func mangaOriginsChanged(_ caller: Manga) {
         guard let manga = manga, manga.id == caller.id else { return }
         

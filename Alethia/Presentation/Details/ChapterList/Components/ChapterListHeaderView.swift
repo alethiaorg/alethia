@@ -38,7 +38,7 @@ struct ChapterListHeaderView: View {
             HStack {
                 NavigationLink {
                     if let continueIndex = vm.continueChapterIndex {
-                        ReaderRootView(chapters: vm.unified, current: continueIndex)
+                        ReaderRootView(settings: vm.manga.chapterSettings, chapters: vm.unified, current: continueIndex)
                     } else {
                         EmptyView()
                     }
