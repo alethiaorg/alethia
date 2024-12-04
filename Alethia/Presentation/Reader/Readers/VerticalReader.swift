@@ -11,6 +11,8 @@ struct VerticalReader: View {
     @EnvironmentObject var vm: ReaderViewModel
     let contents: [String]
     
+    @State private var position: ScrollPosition = .init(id: 0, anchor: .top)
+    
     var body: some View {
         VStack {
             RefreshableScrollView(
@@ -33,22 +35,32 @@ struct VerticalReader: View {
                 }
             )
             .defaultScrollAnchor(.top)
-            .scrollPosition(
-                id: Binding<Int?>(
-                    get: { vm.currentPage },
-                    set: { newValue in
-                        if let newValue = newValue {
-                            vm.currentPage = newValue
-                        }
-                    }
-                ),
-                anchor: .top
-            )
+            .scrollPosition($position)
+            .onAppear {
+                if let currentID = position.viewID as? Int, currentID != vm.currentPage {
+                    position.scrollTo(id: vm.currentPage, anchor: .top)
+                }
+            }
+            .onChange(of: vm.currentPage) {
+                if let currentID = position.viewID as? Int, currentID != vm.currentPage {
+                    position.scrollTo(id: vm.currentPage)
+                }
+            }
+            .onChange(of: position) { oldPosition, newPosition in
+                guard   oldPosition != newPosition,
+                        let newIndex = newPosition.viewID as? Int,
+                        vm.currentPage != newIndex
+                else { return }
+
+                vm.currentPage = newIndex
+            }
             .if(vm.settings.readDirection == .Vertical) { view in
                 view.scrollTargetBehavior(.paging)
-            } else: { view in
-                view.scrollTargetBehavior(.viewAligned)
             }
+            /// Do not use view-aligned for .Webtoon behaviour! -->
+            /// On scans that split chapter images to small parts this will
+            /// prevent user from ever scrolling to next page naturally
+            /// See: mdex - 306606ed-9272-40d7-9534-c552d7e13f32
         }
         // Need to define here otherwise overlay will be ignored as well
         .edgesIgnoringSafeArea(.top)
@@ -56,36 +68,31 @@ struct VerticalReader: View {
     
     @ViewBuilder
     private func ScrollContent() -> some View {
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                ForEach(Array(contents.enumerated()), id: \.element) { index, imageUrlString in
-                    Group {
-                        if let url = URL(string: imageUrlString) {
-                            RetryableImage(
-                                url: url,
-                                index: index,
-                                referer: vm.currentChapter.origin?.referer ?? ""
-                            )
-                        } else {
-                            Text("Invalid image URL")
-                                .tag(index)
-                        }
+        VStack(spacing: 0) {
+            ForEach(Array(contents.enumerated()), id: \.element) { index, imageUrlString in
+                Group {
+                    if let url = URL(string: imageUrlString) {
+                        RetryableImage(
+                            url: url,
+                            index: index,
+                            referer: vm.currentChapter.origin?.referer ?? ""
+                        )
+                    } else {
+                        Text("Invalid image URL")
+                            .tag(index)
                     }
-                    .id(index)
-                    .containerRelativeFrame(
-                        vm.settings.readDirection == ReaderDirection.Webtoon ?
-                            .horizontal :
-                                .vertical
-                        , count: 1,
-                        spacing: 0
-                    )
                 }
-            }
-            .scrollTargetLayout()
-            .onAppear {
-                proxy.scrollTo(vm.currentPage, anchor: .top)
+                .id(index)
+                .containerRelativeFrame(
+                    vm.settings.readDirection == ReaderDirection.Webtoon ?
+                        .horizontal :
+                            .vertical
+                    , count: 1,
+                    spacing: 0
+                )
             }
         }
+        .scrollTargetLayout()
     }
     
     @ViewBuilder

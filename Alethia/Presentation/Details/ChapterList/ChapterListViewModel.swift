@@ -75,6 +75,8 @@ final class ChapterListViewModel {
         unified = manga.getUnifiedChapterList()
     }
     
+    // TODO: Throttle below functions
+    
     func updateOriginPriority(context: ModelContext, from: Int, to: Int) {
         let chapterSettings = manga.chapterSettings
         
