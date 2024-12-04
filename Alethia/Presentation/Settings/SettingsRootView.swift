@@ -166,15 +166,10 @@ struct SettingsRootView: View {
                     Spacer()
                     HStack(spacing: 15) {
                         Button {
-                            withAnimation {
-                                prefetch = max(0, prefetch - 1)
-                                if haptics {
-                                    Haptics.impact(style: .light)
-                                }
-                            }
+                            prefetch = max(0, prefetch - 1)
                         } label: {
                             Image(systemName: "minus.circle.fill")
-                                .foregroundColor(prefetch == 0 ? .tint : .gray)
+                                .foregroundColor(prefetch == 0 ? Color.tint : Color.gray)
                                 .imageScale(.large)
                                 .animation(.easeInOut(duration: 0.2), value: prefetch)
                         }
@@ -185,15 +180,10 @@ struct SettingsRootView: View {
                             .font(.headline)
                         
                         Button{
-                            withAnimation {
-                                prefetch += 1
-                                if haptics {
-                                    Haptics.impact(style: .light)
-                                }
-                            }
+                            prefetch += 1
                         } label: {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.gray)
+                                .foregroundColor(prefetch == 0 ? Color.tint : Color.gray)
                                 .imageScale(.large)
                         }
                     }

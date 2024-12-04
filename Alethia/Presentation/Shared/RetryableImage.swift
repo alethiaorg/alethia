@@ -26,10 +26,8 @@ struct RetryableImage: View {
     var body: some View {
         ZStack {
             KFImage(url)
-            // Use referer when requesting images
                 .requestModifier(RefererModifier(referer: referer))
             
-            // Progress handlers
                 .onProgress { receivedSize, totalSize in
                     let progress = Double(receivedSize) / Double(totalSize)
                     loadingProgress = progress
@@ -43,18 +41,12 @@ struct RetryableImage: View {
                     loadedImage = nil // Clear the image if failed
                 }
                 .retry(maxCount: 5, interval: .seconds(0.5))
-            
-            // Take up entire width of screen
+                .cacheOriginalImage()
+                .backgroundDecode()
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .tag(index)
                 .id(reloadID)
-            
-//                .zoomable(
-//                    minZoomScale: 1,
-//                    doubleTapZoomScale: 2,
-//                    outOfBoundsColor: Color.background
-//                )
             
             // NOTE: Can't apply .zoomable to this or else webtoon-view breaks!
             

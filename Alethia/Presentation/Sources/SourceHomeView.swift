@@ -15,8 +15,7 @@ struct SourceHomeView: View {
     @Environment(\.modelContext) private var modelContext
     let source: Source
     
-    // Array<path: [mangaEntry]>
-    @State private var items: [String: [MangaEntry]] = [:]
+    @State private var items: [String: Result<[MangaEntry], Error>] = [:]
     @State private var libraryStatus: [UUID: Bool] = [:]
     @State private var firstLoad: Bool = true
     @State private var itemsSet: Bool = false
@@ -45,8 +44,14 @@ struct SourceHomeView: View {
                             }
                         )
                         
-                        if let entries = items[route.path], itemsSet {
-                            RowView(items: Array(entries.prefix(20)))
+                        if let result = items[route.path], itemsSet {
+                            switch result {
+                            case .success(let entries):
+                                RowView(items: Array(entries.prefix(20)))
+                            case .failure(let error):
+                                Text("Error: \(error.localizedDescription)")
+                                    .foregroundColor(.red)
+                            }
                         } else {
                             SkeletonRowView()
                         }
@@ -59,7 +64,7 @@ struct SourceHomeView: View {
             Task {
                 itemsSet = false
                 if firstLoad {
-                    try await getRootContent()
+                    await getRootContent()
                     try updateLibraryStatus()
                     firstLoad = false
                 }
@@ -140,7 +145,7 @@ struct SourceHomeView: View {
                             .navigationTransition(.zoom(sourceID: "image-\(item.id)", in: namespace))
                     } label: {
                         MangaEntryView(item: item, inLibrary: libraryStatus[item.id])
-                        .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
+                            .matchedTransitionSource(id: "image-\(item.id)", in: namespace)
                     }
                     .frame(width: 150)
                     .simultaneousGesture(TapGesture().onEnded {
@@ -153,18 +158,33 @@ struct SourceHomeView: View {
         }
     }
     
-    private func getRootContent() async throws -> Void {
-        for route in source.routes {
-            let newContent = try await getSourceContent(source: source, route: route.path, page: 0)
-            items[route.path] = newContent
+    private func getRootContent() async {
+        await withTaskGroup(of: (String, Result<[MangaEntry], Error>).self) { group in
+            for route in source.routes {
+                group.addTask {
+                    do {
+                        let newContent = try await getSourceContent(source: self.source, route: route.path, page: 0)
+                        return (route.path, .success(newContent))
+                    } catch {
+                        return (route.path, .failure(error))
+                    }
+                }
+            }
+            
+            for await (path, result) in group {
+                items[path] = result
+            }
         }
     }
     
     private func updateLibraryStatus() throws -> Void {
-        for (_, entries) in items {
-            for entry in entries {
-                libraryStatus[entry.id] = try inLibrary(entry)
+        for (_, result) in items {
+            if case .success(let entries) = result {
+                for entry in entries {
+                    libraryStatus[entry.id] = try inLibrary(entry)
+                }
             }
+            // Skip updating library status for entries that failed to load
         }
     }
     

@@ -32,61 +32,6 @@ struct SourceSearchView: View {
         _searchText = State(initialValue: searchText)
     }
     
-    var body: some View {
-        VStack {
-            SearchBar(searchText: $searchText)
-                .padding(.bottom, 20)
-                .onSubmit {
-                    Task {
-                        hasSearched = true
-                        await fetchContent()
-                        updateLibraryStatus()
-                    }
-                }
-            
-            if searchText.isEmpty || !hasSearched {
-                Spacer()
-                Text("Search Something")
-                Text("(๑˃ᴗ˂)ﻭ")
-                Spacer()
-            }
-            
-            else if searchResults.isEmpty {
-                Spacer()
-                Text("No Results")
-                Text("(︶︹︺)")
-                Spacer()
-            }
-            
-            else {
-                SearchResults()
-            }
-        }
-        .padding(.horizontal, 15)
-        .navigationTitle("\(source.name) - Search")
-        .onAppear {
-            if !searchText.isEmpty {
-                Task {
-                    hasSearched = true
-                    await fetchContent()
-                    updateLibraryStatus()
-                }
-            }
-            else {
-                updateLibraryStatus()
-            }
-        }
-        .onChange(of: searchText) {
-            page = 0
-            noMoreContent = false
-            
-            contentLoading = false
-            searchResults.removeAll()
-            libraryStatus.removeAll()
-            hasSearched = false
-        }
-    }
-    
     private func fetchContent() async {
         guard !searchText.isEmpty,
               !noMoreContent else { return }
@@ -140,6 +85,65 @@ struct SourceSearchView: View {
         return false
     }
     
+    var body: some View {
+        VStack {
+            SearchBar(searchText: $searchText)
+                .padding(.bottom, 20)
+                .onSubmit {
+                    Task {
+                        hasSearched = true
+                        await fetchContent()
+                        updateLibraryStatus()
+                    }
+                }
+            
+            if contentLoading {
+                ProgressView()
+            }
+            
+            if searchText.isEmpty || !hasSearched {
+                Spacer()
+                Text("Search Something")
+                Text("(๑˃ᴗ˂)ﻭ")
+                Spacer()
+            }
+            
+            else if searchResults.isEmpty {
+                Spacer()
+                Text("No Results")
+                Text("(︶︹︺)")
+                Spacer()
+            }
+            
+            else {
+                SearchResults()
+            }
+        }
+        .padding(.horizontal, 15)
+        .navigationTitle("\(source.name) - Search")
+        .onAppear {
+            if !searchText.isEmpty {
+                Task {
+                    hasSearched = true
+                    await fetchContent()
+                    updateLibraryStatus()
+                }
+            }
+            else {
+                updateLibraryStatus()
+            }
+        }
+        .onChange(of: searchText) {
+            page = 0
+            noMoreContent = false
+            
+            contentLoading = false
+            searchResults.removeAll()
+            libraryStatus.removeAll()
+            hasSearched = false
+        }
+    }
+    
     @ViewBuilder
     private func SearchResults() -> some View {
         ScrollView {
@@ -161,18 +165,15 @@ struct SourceSearchView: View {
                     .fontWeight(.semibold)
                     .padding()
             }
-            
-            if contentLoading {
-                ProgressView()
-                    .padding()
-            }
         }
         .refreshable {
             page = 0
+            searchResults.removeAll()
+            hasSearched = false
+            noMoreContent = false
             await fetchContent()
             updateLibraryStatus()
         }
-        
         .shouldLoadMore(bottomDistance: .absolute(50), waitForHeightChange: .always) {
             guard !contentLoading,
                   !noMoreContent else { return }

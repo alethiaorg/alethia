@@ -10,14 +10,14 @@ import SwiftUI
 struct NextChapterView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("haptics") private var hapticsEnabled: Bool = false
-    @EnvironmentObject var controller: ReaderControls
+    @EnvironmentObject var vm: ReaderViewModel
     
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
             
             VStack(spacing: 8) {
-                Text(controller.currentChapter.toString())
+                Text(vm.currentChapter.toString())
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
@@ -30,11 +30,11 @@ struct NextChapterView: View {
             
             Spacer()
             
-            if controller.canGoForward {
-                let nextChapter = controller.chapters[controller.currentIndex - 1]
+            if vm.canGoForward {
+                let nextChapter = vm.chapters[vm.currentIndex - 1]
                 
                 Button {
-                    controller.goToNextChapter()
+                    vm.goToNextChapter()
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 12) {

@@ -44,13 +44,14 @@ struct RootView: View {
                 }
         }
         .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave)) { notification in
-            if let userInfo = notification.userInfo {
-                let ds = DataService(modelContext: modelContext)
-                
-                let insertedIdentifiers = (userInfo["inserted"] as? [PersistentIdentifier]) ?? []
-                let deletedIdentifiers = (userInfo["deleted"] as? [PersistentIdentifier]) ?? []
-                let updatedIdentifiers = (userInfo["updated"] as? [PersistentIdentifier]) ?? []
+            guard let userInfo = notification.userInfo else { return }
 
+            let insertedIdentifiers = (userInfo["inserted"] as? [PersistentIdentifier]) ?? []
+            let deletedIdentifiers = (userInfo["deleted"] as? [PersistentIdentifier]) ?? []
+            let updatedIdentifiers = (userInfo["updated"] as? [PersistentIdentifier]) ?? []
+
+            DispatchQueue.global(qos: .background).async {
+                let ds = DataService(modelContext: modelContext)
                 let context = modelContext
 
                 let insertedObjects = insertedIdentifiers.compactMap { identifier in
@@ -64,11 +65,11 @@ struct RootView: View {
                 let deletedObjects = deletedIdentifiers.map { identifier in
                     identifier
                 }
-                
-                print("Inserted objects: \(insertedObjects)")
-                print("Updated objects: \(updatedObjects)")
-                print("Deleted identifiers: \(deletedObjects)")
-                
+
+//                print("Inserted objects: \(insertedObjects)")
+//                print("Updated objects: \(updatedObjects)")
+//                print("Deleted identifiers: \(deletedObjects)")
+
                 ds.updateMangaSettings(for: updatedObjects)
             }
         }

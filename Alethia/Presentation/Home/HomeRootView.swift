@@ -34,25 +34,6 @@ struct HomeRootView: View {
         sortBy: [.init(\.id, order: .reverse)]
     )
     
-    var body: some View {
-        NavigationStack {
-            VStack {
-                if noContent {
-                    Text("No Manga In Library")
-                    Text("(︶︹︺)")
-                }
-                else {
-                    ContentView()
-                }
-            }
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.large)
-            .onAppear {
-                loadPopular()
-            }
-        }
-    }
-    
     private func loadPopular() {
         var fetchDescriptor = FetchDescriptor<Manga>(
             predicate: #Predicate { $0.inLibrary }
@@ -85,97 +66,101 @@ struct HomeRootView: View {
             print("Error fetching manga: \(error)")
         }
     }
-}
-
-private extension HomeRootView {
-    @ViewBuilder
-    private func ContentView() -> some View {
-        ScrollView {
-            VStack(spacing: 15) {
-                if !carouselContent.isEmpty {
-                    CarouselView(items: carouselContent)
-                }
-                
-                Group {
-                    recentlyUpdatedSection
-                    
-                    recentlyAddedSection
-                    
-                    tagsSection
-                }
-                .padding(.horizontal, 15)
-            }
-        }
-        .ignoresSafeArea(.container, edges: .top)
-    }
     
-    @ViewBuilder
-    private func RowView(items: [Manga]) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 4) {
-                ForEach(Array(items).prefix(10), id: \.id) { item in
-                    NavigationLink {
-                        if let entry = try? item.toMangaEntry() {
-                            DetailView(entry: entry)
-                        } else {
-                            Text("Unable to load manga details")
-                        }
-                    } label: {
-                        if let entry = try? item.toMangaEntry() {
-                            NavigationLink {
-                                DetailView(entry: entry)
-                            } label: {
-                                MangaEntryView(item: entry)
+    var body: some View {
+        NavigationStack {
+            VStack {
+                if noContent {
+                    NoContentView()
+                }
+                else {
+                    ScrollView {
+                        VStack(spacing: 15) {
+                            if !carouselContent.isEmpty {
+                                CarouselView(items: carouselContent, hapticsEnabled: hapticsEnabled)
                             }
-                        } else {
-                            Text("Unavailable to convert \(item.title) to entry.")
-                                .foregroundColor(.red)
+                            
+                            Group {
+                                RowView(
+                                    title: "Recently Updated",
+                                    items: updated // Fetch via origin, filter those in library and compact map to unique
+                                        .filter { $0.manga?.inLibrary ?? false }
+                                        .compactMap { $0.manga },
+                                    hapticsEnabled: hapticsEnabled
+                                )
+                                
+                                RowView(title: "Recently Added", items: added, hapticsEnabled: hapticsEnabled)
+                                
+                                // Tags
+                                ForEach(Array(popular.keys), id: \.self) { title in
+                                    RowView(
+                                        title: title,
+                                        items: popular[title] ?? [],
+                                        hapticsEnabled: hapticsEnabled
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 15)
                         }
                     }
-                    .frame(width: 150)
-                    .simultaneousGesture(TapGesture().onEnded {
-                        if hapticsEnabled {
-                            Haptics.impact()
-                        }
-                    })
+                    .ignoresSafeArea(.container, edges: .top)
                 }
             }
         }
-    }
-    
-    private var recentlyUpdatedSection: some View {
-        VStack(alignment: .leading) {
-            Text("Recently Updated")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            RowView(
-                items: updated
-                    .filter { $0.manga?.inLibrary ?? false }
-                    .map { $0.manga! }
-            )
+        .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.large)
+        .onAppear {
+            loadPopular()
         }
     }
+}
+
+private struct NoContentView: View {
+    var body: some View {
+        Text("No Manga In Library")
+        Text("(︶︹︺)")
+    }
+}
+
+private struct RowView: View {
+    @Namespace private var namespace
+    let title: String
+    let items: [Manga]
     
-    private var recentlyAddedSection: some View {
+    var hapticsEnabled: Bool
+    
+    var body: some View {
         VStack(alignment: .leading) {
-            Text("Recently Added")
+            Text(title)
                 .font(.title)
                 .fontWeight(.bold)
-            
-            RowView(items: added)
-        }
-    }
-    
-    private var tagsSection: some View {
-        VStack(alignment: .leading) {
-            ForEach(Array(popular.keys), id: \.self) { title in
-                VStack(alignment: .leading) {
-                    Text(title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    RowView(items: popular[title] ?? [])
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 4) {
+                    ForEach(Array(items).prefix(10), id: \.id) { item in
+                        NavigationLink {
+                            if let entry = try? item.toMangaEntry() {
+                                DetailView(entry: entry)
+                                    .navigationTransition(.zoom(sourceID: "\(title)-\(item.id)", in: namespace))
+                            } else {
+                                Text("Unable to load manga details")
+                            }
+                        } label: {
+                            if let entry = try? item.toMangaEntry() {
+                                MangaEntryView(item: entry)
+                                    .matchedTransitionSource(id: "\(title)-\(item.id)", in: namespace)
+                            } else {
+                                Text("Unavailable to convert \(item.title) to entry.")
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        .frame(width: 150)
+                        .simultaneousGesture(TapGesture().onEnded {
+                            if hapticsEnabled {
+                                Haptics.impact()
+                            }
+                        })
+                    }
                 }
             }
         }
@@ -183,7 +168,9 @@ private extension HomeRootView {
 }
 
 private struct CarouselView: View {
-    var items: [Manga]
+    let items: [Manga]
+    
+    var hapticsEnabled: Bool
     
     var body: some View {
         ACarousel(items,
@@ -193,39 +180,27 @@ private struct CarouselView: View {
                   isWrap: true,
                   autoScroll: .active(8)
         ) { item in
-            CarouselItem(item: item)
+            ZStack {
+                BackgroundImage(url: item.getFirstOrigin().cover)
+
+                VStack {
+                    Spacer()
+                    
+                    HStack {
+                        CoverImage(url: item.getFirstOrigin().cover)
+                        Details(item: item)
+                    }
+                    .frame(maxHeight: 250)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+                }
+            }
         }
         .frame(height: 450)
     }
-}
-
-private struct CarouselItem: View {
-    let item: Manga
     
-    var body: some View {
-        ZStack {
-            BackgroundImage(url: item.getFirstOrigin().cover)
-            
-            VStack {
-                Spacer()
-                
-                HStack {
-                    CoverImage(url: item.getFirstOrigin().cover)
-                    
-                    MangaDetails(item: item)
-                }
-                .frame(maxHeight: 250)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 20)
-            }
-        }
-    }
-}
-
-private struct BackgroundImage: View {
-    let url: String
-    
-    var body: some View {
+    @ViewBuilder
+    private func BackgroundImage(url: String) -> some View {
         KFImage(URL(string: url))
             .resizable()
             .aspectRatio(contentMode: .fill)
@@ -234,12 +209,9 @@ private struct BackgroundImage: View {
             .blur(radius: 8)
             .opacity(0.25)
     }
-}
-
-private struct CoverImage: View {
-    let url: String
     
-    var body: some View {
+    @ViewBuilder
+    private func CoverImage(url: String) -> some View {
         GeometryReader { geometry in
             let cellWidth = geometry.size.width
             let cellHeight = cellWidth * 16 / 11
@@ -252,18 +224,14 @@ private struct CoverImage: View {
                 .frame(width: cellWidth, height: cellHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .contentShape(Rectangle())
-                .background(Color.gray.opacity(0.1))
+                .background(Color.tint.opacity(0.1).shimmer())
         }
         .aspectRatio(11/16, contentMode: .fit)
         .frame(maxWidth: .infinity)
     }
-}
-
-private struct MangaDetails: View {
-    @AppStorage("haptics") private var hapticsEnabled: Bool = false
-    let item: Manga
     
-    var body: some View {
+    @ViewBuilder
+    private func Details(item: Manga) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(item.title)
                 .font(.headline)
@@ -314,7 +282,6 @@ private struct MangaDetails: View {
                 .foregroundColor(.background)
                 .cornerRadius(12)
             }
-//            .frame(height: 44)
         }
     }
 }

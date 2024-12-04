@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct HorizontalReader: View {
-    @EnvironmentObject var controller: ReaderControls
+    @EnvironmentObject var vm: ReaderViewModel
     let contents: [String]
     
     var body: some View {
-        TabView(selection: $controller.currentPage) {
-            if controller.canGoBack {
+        TabView(selection: $vm.currentPage) {
+            if vm.canGoBack {
                 Text("")
                     .tag(-2)
             }
@@ -27,7 +27,7 @@ struct HorizontalReader: View {
                         RetryableImage(
                             url: url,
                             index: index,
-                            referer: controller.currentChapter.origin?.referer ?? ""
+                            referer: vm.currentChapter.origin?.referer ?? ""
                         )
                         .tag(index)
                     } else {
@@ -40,20 +40,22 @@ struct HorizontalReader: View {
             NextChapterView()
                 .tag(contents.count)
             
-            if controller.canGoForward {
+            if vm.canGoForward {
                 Text("")
                     .tag(contents.count + 1)
             }
         }
-        .environment(\.layoutDirection, controller.settings.readDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
+        .transition(.identity)
+        .animation(nil)
+        .environment(\.layoutDirection, vm.settings.readDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-        .onChange(of: controller.currentPage) { newPage, oldPage in
+        .onChange(of: vm.currentPage) { newPage, oldPage in
             if oldPage == -2 {
-                controller.goToPreviousChapter()
+                vm.goToPreviousChapter()
             }
             else if oldPage == contents.count + 1 {
-                controller.goToNextChapter()
+                vm.goToNextChapter()
             }
         }
     }
