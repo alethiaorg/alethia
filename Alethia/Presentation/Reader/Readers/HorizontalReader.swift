@@ -45,8 +45,6 @@ struct HorizontalReader: View {
                     .tag(contents.count + 1)
             }
         }
-        .transition(.identity)
-        .animation(nil)
         .environment(\.layoutDirection, vm.settings.readDirection == .RTL ? .rightToLeft : .leftToRight) // Already handled if horizontal so just check if RTL here
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))

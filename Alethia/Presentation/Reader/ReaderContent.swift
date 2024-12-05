@@ -11,7 +11,8 @@ import Kingfisher
 struct ReaderContent: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var controller: ReaderViewModel
+    @Environment(\.scenePhase) var scenePhase
+    @EnvironmentObject var vm: ReaderViewModel
     @AppStorage("prefetch") private(set) var PREFETCH_RANGE = 0
     
     @State private var contents = [String]()
@@ -58,10 +59,12 @@ struct ReaderContent: View {
     }
     
     @ViewBuilder private func Reader() -> some View {
-        if controller.settings.readDirection.isVertical {
+        if vm.settings.readDirection.isVertical {
             VerticalReader(contents: contents)
         } else {
             HorizontalReader(contents: contents)
+                // Need to prevent interaction until content loaded and the onAppear .scrollTo triggers
+                .allowsHitTesting(vm.paintedScreen)
         }
     }
     
@@ -75,7 +78,8 @@ struct ReaderContent: View {
                 EmptyContentView()
             } else {
                 ReaderOverlay(
-                    currentPage: $controller.currentPage,
+                    currentPage: $vm.currentPage,
+                    isOverlayVisible: $vm.isOverlayVisible,
                     totalPages: contents.count
                 ) {
                     Reader()
@@ -88,41 +92,48 @@ struct ReaderContent: View {
         .onAppear {
             loadChapterContent()
         }
-        .onChange(of: controller.currentPage) { old, new in
-            guard !contents.isEmpty else { return }
-            guard old != new else { return }
+        .onChange(of: vm.currentPage) { old, new in
+            guard !contents.isEmpty, old != new else { return }
             
             prefetchImages()
-            updateProgress()
         }
-        .onChange(of: controller.currentIndex) { oldValue, newValue in
+        .onChange(of: vm.currentIndex) { oldValue, newValue in
+            // Need to update chapter from old index value
+            updateProgress(vm.chapters[oldValue])
+            
             isGoingToPreviousChapter = newValue > oldValue
             isGoingToNextChapter = newValue < oldValue
             withAnimation {
                 currentChapterId = UUID()
+                vm.paintedScreen = false
             }
             loadChapterContent()
+        }
+        .onChange(of: scenePhase) {
+            if scenePhase != .active {
+                updateProgress(vm.currentChapter)
+            }
+        }
+        .onDisappear {
+            updateProgress(vm.currentChapter)
         }
     }
     
     private func transitionForCurrentDirection() -> AnyTransition {
-        switch controller.settings.readDirection {
+        let transition: AnyTransition
+        switch vm.settings.readDirection {
         case .LTR:
-            return AnyTransition.move(edge: .trailing)
+            transition = .push(from: .trailing)
         case .RTL:
-            return AnyTransition.move(edge: .leading)
+            transition = .push(from: .leading)
         case .Vertical:
             fallthrough
         case .Webtoon:
-            return AnyTransition.move(edge: .bottom)
+            transition = .push(from: isGoingToPreviousChapter ? .top : .bottom)
         }
-    }
-    
-    private func updateProgress() {
-        let newProgress = max(0.0, min(Double(controller.currentPage) / Double(contents.count - 1), 1.0))
-        controller.currentChapter.progress = newProgress
         
-        try? modelContext.save()
+        return transition.combined(with: .opacity)
+            .animation(.easeInOut)
     }
     
     private func loadChapterContent() {
@@ -131,12 +142,12 @@ struct ReaderContent: View {
             do {
                 var results = [String]()
                 
-                if controller.currentChapter.isDownloaded {
+                if vm.currentChapter.isDownloaded {
                     let ds = DownloadService(modelContext: modelContext)
-                    results = try await ds.getChapter(controller.currentChapter)
+                    results = try await ds.getChapter(vm.currentChapter)
                 }
                 else {
-                    results = try await getChapterContent(chapter: controller.currentChapter)
+                    results = try await getChapterContent(chapter: vm.currentChapter)
                 }
                 
                 await MainActor.run {
@@ -147,15 +158,15 @@ struct ReaderContent: View {
                     /// - jump to last page if going to previous chapter or...
                     /// - load from the current chapter's progress
                     if isGoingToPreviousChapter {
-                        controller.currentPage = contents.count - 1
+                        vm.currentPage = contents.count - 1
                     }
                     else if isGoingToNextChapter {
-                        controller.currentPage = 0
+                        vm.currentPage = 0
                     }
                     else {
                         let totalPages = contents.count
                         // Progress from 0.0 - 1.0
-                        let currentProgress = max(0.0, min(controller.currentChapter.progress, 1.0))
+                        let currentProgress = max(0.0, min(vm.currentChapter.progress, 1.0))
                         
                         // Page from progress calc
                         let currentPage = Int(Double(totalPages - 1) * currentProgress)
@@ -164,8 +175,8 @@ struct ReaderContent: View {
                         print("Current Progress: \(currentProgress)")
                         print("Current Page:  (\(totalPages) - 1) * \(currentProgress) = \(currentPage)")
                         
-                        controller.currentPage = currentPage
-                        controller.createReadingHistory(modelContext: modelContext, startPage: controller.currentPage)
+                        vm.currentPage = currentPage
+                        vm.createReadingHistory(modelContext: modelContext, startPage: vm.currentPage)
                     }
                     
                     isGoingToPreviousChapter = false
@@ -186,8 +197,8 @@ struct ReaderContent: View {
         guard !contents.isEmpty else { return }
         
         // Calculate the range of indices to prefetch
-        let startIndex = max(0, controller.currentPage - PREFETCH_RANGE)
-        let endIndex = min(contents.count - 1, controller.currentPage + PREFETCH_RANGE)
+        let startIndex = max(0, vm.currentPage - PREFETCH_RANGE)
+        let endIndex = min(contents.count - 1, vm.currentPage + PREFETCH_RANGE)
         
         guard startIndex <= endIndex else { return }
         
@@ -200,5 +211,15 @@ struct ReaderContent: View {
         )
         
         prefetcher?.start()
+    }
+    
+    private func updateProgress(_ chapter: Chapter) {
+        // Lag occurs when updating per page, better to update whenever index changes or on disappear etc.
+        let newProgress = max(0.0, min(Double(vm.currentPage) / Double(contents.count - 1), 1.0))
+        withAnimation {
+            chapter.progress = newProgress
+
+            try? modelContext.save()
+        }
     }
 }

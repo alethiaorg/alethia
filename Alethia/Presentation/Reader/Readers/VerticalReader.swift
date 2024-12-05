@@ -14,7 +14,7 @@ struct VerticalReader: View {
     @State private var position: ScrollPosition = .init(id: 0, anchor: .top)
     
     var body: some View {
-        VStack {
+        ZStack {
             RefreshableScrollView(
                 content: {
                     ScrollContent()
@@ -34,11 +34,21 @@ struct VerticalReader: View {
                     vm.goToNextChapter()
                 }
             )
+            .edgesIgnoringSafeArea(.top)
             .defaultScrollAnchor(.top)
             .scrollPosition($position)
             .onAppear {
                 if let currentID = position.viewID as? Int, currentID != vm.currentPage {
                     position.scrollTo(id: vm.currentPage, anchor: .top)
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            vm.paintedScreen = true
+                        }
+                    }
+                } else {
+                    withAnimation {
+                        vm.paintedScreen = true
+                    }
                 }
             }
             .onChange(of: vm.currentPage) {
@@ -54,16 +64,14 @@ struct VerticalReader: View {
 
                 vm.currentPage = newIndex
             }
-            .if(vm.settings.readDirection == .Vertical) { view in
-                view.scrollTargetBehavior(.paging)
-            }
             /// Do not use view-aligned for .Webtoon behaviour! -->
             /// On scans that split chapter images to small parts this will
             /// prevent user from ever scrolling to next page naturally
             /// See: mdex - 306606ed-9272-40d7-9534-c552d7e13f32
+            .if(vm.settings.readDirection == .Vertical) { view in
+                view.scrollTargetBehavior(.paging)
+            }
         }
-        // Need to define here otherwise overlay will be ignored as well
-        .edgesIgnoringSafeArea(.top)
     }
     
     @ViewBuilder

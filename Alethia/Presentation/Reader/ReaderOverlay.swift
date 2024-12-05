@@ -11,12 +11,8 @@ struct ReaderOverlay<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var controller: ReaderViewModel
-    @State var isOverlayVisible: Bool = true
-    @Binding var currentPage: Int {
-        didSet {
-            print("Current Page: \(currentPage)")
-        }
-    }
+    @Binding var isOverlayVisible: Bool
+    @Binding var currentPage: Int
     let totalPages: Int
     let content: Content
     
@@ -24,8 +20,14 @@ struct ReaderOverlay<Content: View>: View {
         currentPage >= 0 && currentPage < totalPages
     }
     
-    init(currentPage: Binding<Int>, totalPages: Int, @ViewBuilder content: () -> Content) {
+    init(
+        currentPage: Binding<Int>,
+        isOverlayVisible: Binding<Bool>,
+        totalPages: Int,
+        @ViewBuilder content: () -> Content
+    ) {
         self._currentPage = currentPage
+        self._isOverlayVisible = isOverlayVisible
         self.totalPages = totalPages
         self.content = content()
     }
@@ -33,16 +35,14 @@ struct ReaderOverlay<Content: View>: View {
     var body: some View {
         ZStack {
             content
-                .zoomable(
-                    minZoomScale: 1.1,
-                    doubleTapZoomScale: 2.0,
-                    outOfBoundsColor: Color.background
+                .simultaneousGesture(
+                    TapGesture()
+                        .onEnded {
+                            withAnimation(.easeInOut) {
+                                isOverlayVisible.toggle()
+                            }
+                        }
                 )
-                .onTapGesture {
-                    withAnimation(.easeInOut) {
-                        isOverlayVisible.toggle()
-                    }
-                }
             
             if isOverlayVisible && inContentRange {
                 VStack {

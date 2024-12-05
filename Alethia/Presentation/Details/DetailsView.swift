@@ -60,9 +60,6 @@ struct DetailView: View {
             if let result = try modelContext.fetch(sameIdDescriptor).first {
                 print("Manga Fetched from Context")
                 
-                // First time fetched - Manually trigger setting fetch
-                result.originsDidChange()
-                
                 manga = result
             }
             else if let result = try modelContext.fetch(sameTitleDescriptor).first {
@@ -72,6 +69,8 @@ struct DetailView: View {
             else {
                 print("Manga Fetching from Remote Source")
                 manga = try await getMangaFromEntry(entry: entry, context: modelContext)
+                // When fetching from remote source for first time we need to call update to init settings
+                manga!.originsDidChange()
             }
             
             withAnimation {
@@ -401,8 +400,7 @@ private struct ActionButtonsView: View {
             let defaultOrigin = manga.getFirstOrigin()
             manga.origins.append(contentsOf: mangaFromContext.origins)
             manga.updateOriginOrder(newDefaultOrigin: defaultOrigin)
-            
-            manga.needsSettingsUpdate = true
+            manga.originsDidChange()
             
             try modelContext.save()
             

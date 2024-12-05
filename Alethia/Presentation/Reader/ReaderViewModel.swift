@@ -13,7 +13,11 @@ final class ReaderViewModel: ObservableObject {
     let chapters: [Chapter]
     @Published var currentIndex: Int
     @Published var currentPage: Int = 0
+    @Published var isOverlayVisible: Bool = true
     @Published var currentReadingHistory: ReadingHistory?
+    
+    // For vertical reader, we need to scroll to certain section first before displaying
+    @Published var paintedScreen: Bool = false
     
     init(
         settings: ChapterSettings,
