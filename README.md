@@ -1,4 +1,4 @@
-# Alethia 📚
+# Alethia 💫
 
 <div align="center">
 
@@ -6,17 +6,39 @@
 
 _A modern, SwiftUI-based Manga Reader with API-driven architecture_
 
-[![GitHub license](https://img.shields.io/github/license/alethiaorg/alethia.svg)](https://github.com/alethiaorg/alethia/blob/main/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/alethiaorg/alethia.svg)](https://GitHub.com/alethiaorg/alethia/releases/)
-[![GitHub stars](https://img.shields.io/github/stars/alethiaorg/alethia.svg)](https://GitHub.com/alethiaorg/alethia/stargazers/)
+[![GitHub license](https://img.shields.io/github/license/alethiaorg/alethia)](https://github.com/alethiaorg/alethia/blob/main/LICENSE)
+[![Github commits](https://img.shields.io/github/last-commit/alethiaorg/alethia)]
+[![GitHub stars](https://img.shields.io/github/stars/alethiaorg/alethia)](https://gitHub.com/alethiaorg/alethia/stargazers/)
 
 [Overview](#overview) • [Features](#features) • [Getting Started](#getting-started) • [Usage](#usage) • [Roadmap](#roadmap) • [Contributing](#contributing) • [License](#license)
 
 </div>
 
-## Overview
+## Key Highlights
 
-Alethia is a cutting-edge Manga Reader built with SwiftUI, leveraging the power of APIs to provide a seamless and extensible reading experience. Unlike traditional extension-based systems, Alethia's API-driven architecture ensures easy integration of new sources and features.
+_Alethia is more than just a manga reader—it’s a beautifully designed and highly usable platform, striking a perfect balance between functionality and aesthetic appeal._
+
+### Features
+
+> **Elegant UI**: A sleek, polished interface crafted with SwiftUI, ensuring an enjoyable reading experience.
+
+> **User-Focused**: Prioritizes usability without compromising on aesthetics, offering features not commonly found in other readers.
+
+> **API-Centric Design**: Built with a modular API-first approach, enabling seamless adaptability across different languages and systems.
+
+### Why Alethia?
+
+Alethia stands out by redefining the manga reading experience through its emphasis on:
+
+> **Visual Delight**: Immerse yourself in a visually stunning environment.
+
+> **Performance**: Enjoy smooth, lag-free interactions.
+
+> **Customizability**: Tailored to meet the preferences of all readers.
+
+Explore the next generation of manga reading with Alethia, where design meets innovation.
+
+<sub align="center"><sup>~~Above Written by ChatGPT~~</sup></sub>
 
 ## ✨ Features
 
@@ -29,7 +51,7 @@ Alethia is a cutting-edge Manga Reader built with SwiftUI, leveraging the power 
 - ⌛ **Historical tracking** with details down to the second on all reading sessions
 - 💾 **Downloads** Fast and in .CBZ format for support with other cbz-based readers
 
-## 🚀 Getting Started
+## 🚀 Getting Started 🚀
 
 ### Prerequisites
 
